@@ -1,0 +1,47 @@
+-- Migration 0001: Initial schema
+-- Creates: schema_migrations (managed by runner), projects, empresas, ingenieros
+
+-- Projects table (paridad con orgmbt)
+CREATE TABLE IF NOT EXISTS projects (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    ubicacion TEXT,
+    fecha DATE,
+    estado TEXT DEFAULT 'activo',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Companies/Empresas (global registry)
+CREATE TABLE IF NOT EXISTS empresas (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    logo_url TEXT,
+    contacto TEXT,
+    telefono TEXT,
+    correo TEXT,
+    direccion TEXT,
+    ciudad TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Engineers/Ingenieros (global registry)
+CREATE TABLE IF NOT EXISTS ingenieros (
+    id SERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    email TEXT,
+    telefono TEXT,
+    profesion TEXT,
+    foto_perfil_url TEXT,
+    foto_carnet_url TEXT,
+    foto_certificacion_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Indexes for common lookups
+CREATE INDEX IF NOT EXISTS idx_projects_nombre ON projects(nombre);
+CREATE INDEX IF NOT EXISTS idx_empresas_nombre ON empresas(nombre);
+CREATE INDEX IF NOT EXISTS idx_ingenieros_nombre ON ingenieros(nombre);
+CREATE INDEX IF NOT EXISTS idx_ingenieros_email ON ingenieros(email);
