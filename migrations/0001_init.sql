@@ -1,20 +1,23 @@
 -- Migration 0001: Initial schema
 -- Creates: schema_migrations (managed by runner), projects, empresas, ingenieros
+-- NOTE: Using TEXT for IDs to maintain compatibility with orgmbt UUIDs
 
 -- Projects table (paridad con orgmbt)
 CREATE TABLE IF NOT EXISTS projects (
-    id SERIAL PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     nombre TEXT NOT NULL,
     ubicacion TEXT,
     fecha DATE,
     estado TEXT DEFAULT 'activo',
+    id_empresa TEXT,
+    id_ingeniero TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Companies/Empresas (global registry)
 CREATE TABLE IF NOT EXISTS empresas (
-    id SERIAL PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     nombre TEXT NOT NULL,
     logo_url TEXT,
     contacto TEXT,
@@ -28,7 +31,7 @@ CREATE TABLE IF NOT EXISTS empresas (
 
 -- Engineers/Ingenieros (global registry)
 CREATE TABLE IF NOT EXISTS ingenieros (
-    id SERIAL PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     nombre TEXT NOT NULL,
     email TEXT,
     telefono TEXT,

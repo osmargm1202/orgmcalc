@@ -1,11 +1,12 @@
 -- Migration 0003: File assets metadata
 -- Creates: file_assets for metadata-driven file status
+-- NOTE: Using TEXT for owner_id to maintain compatibility with orgmbt UUIDs
 
 CREATE TABLE IF NOT EXISTS file_assets (
-    id SERIAL PRIMARY KEY,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     -- Polymorphic owner reference
     owner_type TEXT NOT NULL, -- 'project', 'empresa', 'ingeniero', 'calculo', 'documento'
-    owner_id INTEGER NOT NULL,
+    owner_id TEXT NOT NULL,
     
     -- File metadata
     asset_type TEXT NOT NULL, -- 'logo', 'perfil', 'carnet', 'certificacion', 'documento', 'adjunto'
@@ -26,7 +27,7 @@ CREATE TABLE IF NOT EXISTS file_assets (
     -- Audit
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    uploaded_by INTEGER, -- Future: link to users table
+    uploaded_by TEXT, -- Future: link to users table
     
     -- Soft unique constraint: only one active asset per owner+type
     CONSTRAINT unique_active_asset UNIQUE NULLS NOT DISTINCT (owner_type, owner_id, asset_type, is_active)

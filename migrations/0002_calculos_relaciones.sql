@@ -1,10 +1,11 @@
 -- Migration 0002: Calculations and relationships
 -- Creates: calculos, calculo_empresas, calculo_ingenieros
+-- NOTE: Using TEXT for IDs to maintain compatibility with orgmbt UUIDs
 
 -- Calculations per project
 CREATE TABLE IF NOT EXISTS calculos (
-    id SERIAL PRIMARY KEY,
-    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     codigo TEXT NOT NULL,
     nombre TEXT NOT NULL,
     descripcion TEXT,
@@ -17,9 +18,9 @@ CREATE TABLE IF NOT EXISTS calculos (
 
 -- Editable company links per calculation
 CREATE TABLE IF NOT EXISTS calculo_empresas (
-    id SERIAL PRIMARY KEY,
-    calculo_id INTEGER NOT NULL REFERENCES calculos(id) ON DELETE CASCADE,
-    empresa_id INTEGER NOT NULL REFERENCES empresas(id) ON DELETE RESTRICT,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    calculo_id TEXT NOT NULL REFERENCES calculos(id) ON DELETE CASCADE,
+    empresa_id TEXT NOT NULL REFERENCES empresas(id) ON DELETE RESTRICT,
     rol TEXT, -- e.g., 'constructor', 'interventor', 'disenador'
     orden INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -29,9 +30,9 @@ CREATE TABLE IF NOT EXISTS calculo_empresas (
 
 -- Editable engineer links per calculation
 CREATE TABLE IF NOT EXISTS calculo_ingenieros (
-    id SERIAL PRIMARY KEY,
-    calculo_id INTEGER NOT NULL REFERENCES calculos(id) ON DELETE CASCADE,
-    ingeniero_id INTEGER NOT NULL REFERENCES ingenieros(id) ON DELETE RESTRICT,
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    calculo_id TEXT NOT NULL REFERENCES calculos(id) ON DELETE CASCADE,
+    ingeniero_id TEXT NOT NULL REFERENCES ingenieros(id) ON DELETE RESTRICT,
     rol TEXT, -- e.g., 'responsable', 'revisor', 'calculista'
     orden INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
