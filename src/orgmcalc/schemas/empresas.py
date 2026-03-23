@@ -15,6 +15,7 @@ class EmpresaCreate(BaseModel):
         json_schema_extra={
             "example": {
                 "nombre": "Constructora ABC S.A.",
+                "url": "https://www.abc.com",
                 "contacto": "Juan Pérez",
                 "telefono": "+502 5555-1234",
                 "correo": "contacto@abc.com",
@@ -26,6 +27,9 @@ class EmpresaCreate(BaseModel):
 
     nombre: str = Field(
         ..., min_length=1, max_length=255, description="Nombre de la empresa (requerido)"
+    )
+    url: str | None = Field(
+        default=None, max_length=500, description="URL del sitio web de la empresa"
     )
     contacto: str | None = Field(
         default=None, max_length=255, description="Nombre de la persona de contacto"
@@ -51,12 +55,15 @@ class EmpresaUpdate(BaseModel):
     """
 
     model_config = ConfigDict(
-        json_schema_extra={"example": {"telefono": "+502 5555-5678", "correo": "nuevo@abc.com"}}
+        json_schema_extra={
+            "example": {"url": "https://nuevo-sitio.com", "telefono": "+502 5555-5678"}
+        }
     )
 
     nombre: str | None = Field(
         default=None, min_length=1, max_length=255, description="Nombre de la empresa"
     )
+    url: str | None = Field(default=None, max_length=500, description="URL del sitio web")
     contacto: str | None = Field(
         default=None, max_length=255, description="Nombre de la persona de contacto"
     )
@@ -75,8 +82,9 @@ class EmpresaResponse(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "id": 1,
+                "id": "emp-uuid",
                 "nombre": "Constructora ABC S.A.",
+                "url": "https://www.abc.com",
                 "contacto": "Juan Pérez",
                 "telefono": "+502 5555-1234",
                 "correo": "contacto@abc.com",
@@ -89,8 +97,9 @@ class EmpresaResponse(BaseModel):
         }
     )
 
-    id: int = Field(..., description="Identificador único de la empresa")
+    id: str = Field(..., description="Identificador único de la empresa")
     nombre: str = Field(..., description="Nombre de la empresa")
+    url: str | None = Field(None, description="URL del sitio web")
     contacto: str | None = Field(None, description="Persona de contacto")
     telefono: str | None = Field(None, description="Teléfono de contacto")
     correo: str | None = Field(None, description="Correo electrónico")
@@ -112,7 +121,7 @@ class EmpresaListItem(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "id": 1,
+                "id": "emp-uuid",
                 "nombre": "Constructora ABC S.A.",
                 "ciudad": "Ciudad de Guatemala",
                 "logo_available": False,
@@ -120,7 +129,7 @@ class EmpresaListItem(BaseModel):
         }
     )
 
-    id: int = Field(..., description="Identificador único")
+    id: str = Field(..., description="Identificador único")
     nombre: str = Field(..., description="Nombre de la empresa")
     ciudad: str | None = Field(None, description="Ciudad")
     logo_available: bool = Field(default=False, description="Indica si tiene logo disponible")

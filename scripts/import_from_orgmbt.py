@@ -173,18 +173,20 @@ class Importer:
             if not nombre_completo:
                 nombre_completo = f"Ingeniero {ingeniero_id}"
 
-            # Use codia as profesion if available
-            profesion = f"CODIA: {ingeniero['codia']}" if ingeniero.get("codia") else None
+            # Get codia number directly (just the number, no "CODIA:" prefix)
+            codia = ingeniero.get("codia", "").strip() if ingeniero.get("codia") else None
 
             if DRY_RUN:
-                print(f"  [DRY RUN] Would import ingeniero {ingeniero_id}: {nombre_completo}")
+                print(
+                    f"  [DRY RUN] Would import ingeniero {ingeniero_id}: {nombre_completo} (CODIA: {codia})"
+                )
                 self.stats["ingenieros_imported"] += 1
                 continue
 
             async with self.target_conn.cursor() as cur:  # type: ignore[union-attr]
                 await cur.execute(
                     """
-                    INSERT INTO ingenieros (id, nombre, email, telefono, profesion, id_empresas,
+                    INSERT INTO ingenieros (id, nombre, email, telefono, codia, id_empresas,
                                            foto_perfil_url, foto_carnet_url, foto_certificacion_url,
                                            created_at, updated_at)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -197,7 +199,7 @@ class Importer:
                         ingeniero["telefono_celular"]
                         if ingeniero.get("telefono_celular")
                         else None,
-                        profesion,
+                        codia,  # Just the number
                         ingeniero.get("id_empresas", ""),  # Import company restrictions
                         None,  # foto_perfil_url
                         None,  # foto_carnet_url

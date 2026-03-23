@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS empresas (
     id TEXT PRIMARY KEY,
     nombre TEXT NOT NULL,
     logo_url TEXT,
+    url TEXT, -- Website URL
     contacto TEXT,
     telefono TEXT,
     correo TEXT,
@@ -36,7 +37,7 @@ CREATE TABLE IF NOT EXISTS ingenieros (
     nombre TEXT NOT NULL,
     email TEXT,
     telefono TEXT,
-    profesion TEXT,
+    codia TEXT, -- Only the number, e.g., "36467"
     id_empresas TEXT DEFAULT '', -- comma-separated list or empty for all
     foto_perfil_url TEXT,
     foto_carnet_url TEXT,

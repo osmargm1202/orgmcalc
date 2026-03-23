@@ -17,7 +17,7 @@ class IngenieroCreate(BaseModel):
                 "nombre": "Ing. María González",
                 "email": "maria.gonzalez@email.com",
                 "telefono": "+502 5555-9876",
-                "profesion": "Ingeniera Civil Estructural",
+                "codia": "12345",
             }
         }
     )
@@ -31,9 +31,7 @@ class IngenieroCreate(BaseModel):
     telefono: str | None = Field(
         default=None, max_length=50, description="Número de teléfono de contacto"
     )
-    profesion: str | None = Field(
-        default=None, max_length=255, description="Especialidad o profesión"
-    )
+    codia: str | None = Field(default=None, max_length=20, description="Número CODIA del ingeniero")
 
 
 class IngenieroUpdate(BaseModel):
@@ -43,9 +41,7 @@ class IngenieroUpdate(BaseModel):
     """
 
     model_config = ConfigDict(
-        json_schema_extra={
-            "example": {"telefono": "+502 5555-1111", "profesion": "Ingeniera Civil Senior"}
-        }
+        json_schema_extra={"example": {"telefono": "+502 5555-1111", "codia": "54321"}}
     )
 
     nombre: str | None = Field(
@@ -53,9 +49,7 @@ class IngenieroUpdate(BaseModel):
     )
     email: str | None = Field(default=None, max_length=255, description="Correo electrónico")
     telefono: str | None = Field(default=None, max_length=50, description="Teléfono de contacto")
-    profesion: str | None = Field(
-        default=None, max_length=255, description="Especialidad o profesión"
-    )
+    codia: str | None = Field(default=None, max_length=20, description="Número CODIA")
 
 
 class IngenieroResponse(BaseModel):
@@ -67,11 +61,11 @@ class IngenieroResponse(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "id": 1,
+                "id": "ing-uuid",
                 "nombre": "Ing. María González",
                 "email": "maria.gonzalez@email.com",
                 "telefono": "+502 5555-9876",
-                "profesion": "Ingeniera Civil Estructural",
+                "codia": "12345",
                 "created_at": "2024-01-05T08:00:00",
                 "updated_at": "2024-03-10T15:20:00",
                 "perfil_available": True,
@@ -81,11 +75,11 @@ class IngenieroResponse(BaseModel):
         }
     )
 
-    id: int = Field(..., description="Identificador único del ingeniero")
+    id: str = Field(..., description="Identificador único del ingeniero")
     nombre: str = Field(..., description="Nombre completo")
     email: str | None = Field(None, description="Correo electrónico")
     telefono: str | None = Field(None, description="Teléfono de contacto")
-    profesion: str | None = Field(None, description="Especialidad o profesión")
+    codia: str | None = Field(None, description="Número CODIA")
     created_at: str = Field(..., description="Fecha de creación")
     updated_at: str = Field(..., description="Última actualización")
     perfil_available: bool = Field(
@@ -108,10 +102,10 @@ class IngenieroListItem(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "id": 1,
+                "id": "ing-uuid",
                 "nombre": "Ing. María González",
                 "email": "maria.gonzalez@email.com",
-                "profesion": "Ingeniera Civil",
+                "codia": "12345",
                 "perfil_available": True,
                 "carnet_available": False,
                 "certificacion_available": False,
@@ -119,10 +113,10 @@ class IngenieroListItem(BaseModel):
         }
     )
 
-    id: int = Field(..., description="Identificador único")
+    id: str = Field(..., description="Identificador único")
     nombre: str = Field(..., description="Nombre completo")
     email: str | None = Field(None, description="Correo electrónico")
-    profesion: str | None = Field(None, description="Especialidad")
+    codia: str | None = Field(None, description="Número CODIA")
     perfil_available: bool = Field(default=False, description="Foto de perfil disponible")
     carnet_available: bool = Field(default=False, description="Carnet disponible")
     certificacion_available: bool = Field(default=False, description="Certificación disponible")
@@ -131,6 +125,6 @@ class IngenieroListItem(BaseModel):
 class IngenieroFilter(BaseModel):
     """Filter parameters for listing engineers."""
 
-    model_config = ConfigDict(json_schema_extra={"example": {"empresa_id": 1}})
+    model_config = ConfigDict(json_schema_extra={"example": {"empresa_id": "emp-uuid"}})
 
-    empresa_id: int | None = Field(default=None, description="Filtrar por ID de empresa asociada")
+    empresa_id: str | None = Field(default=None, description="Filtrar por ID de empresa asociada")
