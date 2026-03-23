@@ -7,6 +7,41 @@ from datetime import date
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class TipoCalculoResponse(BaseModel):
+    """Response for GET /tipo-calculos.
+
+    Predefined calculation types.
+    """
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "id": "abc-123",
+                "codigo": "BT",
+                "nombre": "Cálculo de Baja Tensión",
+                "descripcion": "Cálculo de instalaciones eléctricas de baja tensión",
+                "categoria": "electricidad",
+                "icono": "⚡",
+                "color": "#FFD700",
+                "orden": 1,
+                "activo": True,
+            }
+        }
+    )
+
+    id: str = Field(..., description="Identificador único del tipo de cálculo")
+    codigo: str = Field(..., description="Código corto del tipo (ej: BT, SPT, AC)")
+    nombre: str = Field(..., description="Nombre descriptivo del tipo de cálculo")
+    descripcion: str | None = Field(None, description="Descripción detallada")
+    categoria: str | None = Field(
+        None, description="Categoría (electricidad, mecanica, climatizacion)"
+    )
+    icono: str | None = Field(None, description="Emoji o icono para UI")
+    color: str | None = Field(None, description="Color en formato hex para UI")
+    orden: int = Field(..., description="Orden de aparición")
+    activo: bool = Field(..., description="Si el tipo está activo")
+
+
 class CalculoCreate(BaseModel):
     """Request body for POST /proyectos/{id}/calculos.
 
@@ -20,6 +55,7 @@ class CalculoCreate(BaseModel):
                 "nombre": "Análisis de Cimentación Profunda",
                 "descripcion": "Cálculo de pilotes y zapatas para edificio de 10 niveles",
                 "estado": "borrador",
+                "tipo_calculo_id": "tipo-bt-uuid",
             }
         }
     )
@@ -40,6 +76,10 @@ class CalculoCreate(BaseModel):
         default="borrador",
         max_length=50,
         description="Estado del cálculo: borrador, en_revision, aprobado, rechazado, etc.",
+    )
+    tipo_calculo_id: str = Field(
+        ...,
+        description="ID del tipo de cálculo predefinido (requerido - usar /tipo-calculos para ver opciones)",
     )
 
 
@@ -79,8 +119,9 @@ class CalculoResponse(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "id": 1,
-                "project_id": 5,
+                "id": "calc-uuid",
+                "project_id": "proj-uuid",
+                "tipo_calculo_id": "tipo-bt-uuid",
                 "codigo": "CALC-2024-001",
                 "nombre": "Análisis de Cimentación Profunda",
                 "descripcion": "Cálculo de pilotes y zapatas",
@@ -92,8 +133,9 @@ class CalculoResponse(BaseModel):
         }
     )
 
-    id: int = Field(..., description="Identificador único del cálculo")
-    project_id: int = Field(..., description="ID del proyecto al que pertenece")
+    id: str = Field(..., description="Identificador único del cálculo")
+    project_id: str = Field(..., description="ID del proyecto al que pertenece")
+    tipo_calculo_id: str | None = Field(None, description="ID del tipo de cálculo")
     codigo: str = Field(..., description="Código de identificación")
     nombre: str = Field(..., description="Nombre del cálculo")
     descripcion: str | None = Field(None, description="Descripción detallada")
@@ -112,7 +154,7 @@ class CalculoListItem(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "id": 1,
+                "id": "calc-uuid",
                 "codigo": "CALC-2024-001",
                 "nombre": "Análisis de Cimentación Profunda",
                 "estado": "borrador",
@@ -121,7 +163,7 @@ class CalculoListItem(BaseModel):
         }
     )
 
-    id: int = Field(..., description="Identificador único")
+    id: str = Field(..., description="Identificador único")
     codigo: str = Field(..., description="Código del cálculo")
     nombre: str = Field(..., description="Nombre del cálculo")
     estado: str = Field(..., description="Estado actual")
@@ -138,9 +180,9 @@ class CalculoEmpresaLink(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "id": 1,
-                "calculo_id": 5,
-                "empresa_id": 3,
+                "id": "link-uuid",
+                "calculo_id": "calc-uuid",
+                "empresa_id": "emp-uuid",
                 "empresa_nombre": "Constructora ABC S.A.",
                 "rol": "Constructora Principal",
                 "orden": 1,
@@ -149,9 +191,9 @@ class CalculoEmpresaLink(BaseModel):
         }
     )
 
-    id: int = Field(..., description="Identificador único del vínculo")
-    calculo_id: int = Field(..., description="ID del cálculo")
-    empresa_id: int = Field(..., description="ID de la empresa")
+    id: str = Field(..., description="Identificador único del vínculo")
+    calculo_id: str = Field(..., description="ID del cálculo")
+    empresa_id: str = Field(..., description="ID de la empresa")
     empresa_nombre: str = Field(..., description="Nombre de la empresa")
     rol: str | None = Field(None, description="Rol de la empresa en el cálculo")
     orden: int = Field(..., description="Orden de aparición (para ordenamiento)")
@@ -166,11 +208,11 @@ class CalculoEmpresaLinkCreate(BaseModel):
 
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {"empresa_id": 3, "rol": "Constructora Principal", "orden": 1}
+            "example": {"empresa_id": "emp-uuid", "rol": "Constructora Principal", "orden": 1}
         }
     )
 
-    empresa_id: int = Field(..., description="ID de la empresa a vincular (requerido)")
+    empresa_id: str = Field(..., description="ID de la empresa a vincular (requerido)")
     rol: str | None = Field(
         default=None, max_length=255, description="Rol o función de la empresa en este cálculo"
     )
@@ -203,9 +245,9 @@ class CalculoIngenieroLink(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "id": 1,
-                "calculo_id": 5,
-                "ingeniero_id": 2,
+                "id": "link-uuid",
+                "calculo_id": "calc-uuid",
+                "ingeniero_id": "ing-uuid",
                 "ingeniero_nombre": "Ing. María González",
                 "rol": "Ingeniero Calculista",
                 "orden": 1,
@@ -214,9 +256,9 @@ class CalculoIngenieroLink(BaseModel):
         }
     )
 
-    id: int = Field(..., description="Identificador único del vínculo")
-    calculo_id: int = Field(..., description="ID del cálculo")
-    ingeniero_id: int = Field(..., description="ID del ingeniero")
+    id: str = Field(..., description="Identificador único del vínculo")
+    calculo_id: str = Field(..., description="ID del cálculo")
+    ingeniero_id: str = Field(..., description="ID del ingeniero")
     ingeniero_nombre: str = Field(..., description="Nombre del ingeniero")
     rol: str | None = Field(None, description="Rol del ingeniero en el cálculo")
     orden: int = Field(..., description="Orden de aparición (para ordenamiento)")
@@ -231,11 +273,11 @@ class CalculoIngenieroLinkCreate(BaseModel):
 
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {"ingeniero_id": 2, "rol": "Ingeniero Calculista", "orden": 1}
+            "example": {"ingeniero_id": "ing-uuid", "rol": "Ingeniero Calculista", "orden": 1}
         }
     )
 
-    ingeniero_id: int = Field(..., description="ID del ingeniero a vincular (requerido)")
+    ingeniero_id: str = Field(..., description="ID del ingeniero a vincular (requerido)")
     rol: str | None = Field(
         default=None, max_length=255, description="Rol o función del ingeniero en este cálculo"
     )

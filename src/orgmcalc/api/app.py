@@ -18,6 +18,7 @@ from .routes import (
     ingenieros,
     proyectos,
     storage,
+    tipo_calculos,
 )
 
 
@@ -59,6 +60,7 @@ def create_app() -> FastAPI:
     app.include_router(ingenieros.router)
     app.include_router(documentos.router)
     app.include_router(calculos.router)
+    app.include_router(tipo_calculos.router)
     app.include_router(storage.router)
 
     return app
