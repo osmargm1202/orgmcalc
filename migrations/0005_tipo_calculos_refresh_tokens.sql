@@ -18,18 +18,30 @@ CREATE TABLE IF NOT EXISTS tipo_calculos (
 );
 
 -- Insert predefined calculation types
+-- Updated: Removed EMER, CARGAS. Changed SPT to subestación. Added LTMT, LTAT, SAUX.
 INSERT INTO tipo_calculos (codigo, nombre, descripcion, categoria, icono, color, orden) VALUES
     ('BT', 'Cálculo de Baja Tensión', 'Cálculo de instalaciones eléctricas de baja tensión (120V-480V)', 'electricidad', '⚡', '#FFD700', 1),
-    ('SPT', 'Sistema de Puesta a Tierra', 'Cálculo y diseño de sistemas de puesta a tierra', 'electricidad', '🌍', '#8B4513', 2),
+    ('SPT', 'Sistema de Puesta a Tierra de Subestación', 'Cálculo y diseño de sistemas de puesta a tierra para subestaciones eléctricas', 'subestacion', '🌍', '#8B4513', 2),
     ('AC', 'Capacidad de Aire Acondicionado', 'Cálculo de carga térmica y selección de equipos de climatización', 'climatizacion', '❄️', '#00BFFF', 3),
     ('ILUM', 'Cálculo de Iluminación', 'Cálculo de niveles de iluminación y diseño lumínico', 'electricidad', '💡', '#FFFF00', 4),
-    ('CARGAS', 'Cálculo de Cargas Eléctricas', 'Balance de cargas, demanda y factor de diversidad', 'electricidad', '📊', '#FF6347', 5),
-    ('TDF', 'Transformadores', 'Selección y cálculo de transformadores', 'electricidad', '🔌', '#4682B4', 6),
-    ('CCM', 'Centros de Carga', 'Distribución y protección en centros de carga motores', 'electricidad', '⚙️', '#696969', 7),
-    ('DESC', 'Descargas Atmosféricas', 'Sistema de protección contra descargas atmosféricas (SPDA)', 'electricidad', '⛈️', '#4B0082', 8),
-    ('EMER', 'Sistemas de Emergencia', 'Cálculo de sistemas de iluminación y alimentación de emergencia', 'electricidad', '🚨', '#FF0000', 9),
-    ('FOTOV', 'Sistemas Fotovoltaicos', 'Cálculo de sistemas solares fotovoltaicos', 'electricidad', '☀️', '#FFA500', 10)
-ON CONFLICT (codigo) DO NOTHING;
+    ('TDF', 'Transformadores', 'Selección y cálculo de transformadores', 'electricidad', '🔌', '#4682B4', 5),
+    ('CCM', 'Centros de Carga', 'Distribución y protección en centros de carga motores', 'electricidad', '⚙️', '#696969', 6),
+    ('DESC', 'Descargas Atmosféricas', 'Sistema de protección contra descargas atmosféricas (SPDA)', 'electricidad', '⛈️', '#4B0082', 7),
+    ('LTMT', 'Líneas de Transmisión Media Tensión', 'Cálculo y diseño de líneas de transmisión en media tensión (13.8kV - 34.5kV)', 'transmision', '🏗️', '#9370DB', 8),
+    ('LTAT', 'Líneas de Transmisión Alta Tensión', 'Cálculo y diseño de líneas de transmisión en alta tensión (>34.5kV)', 'transmision', '🔺', '#DC143C', 9),
+    ('SAUX', 'Servicios Auxiliares de Subestación', 'Cálculo de servicios auxiliares para subestaciones (iluminación, fuerza, HVAC)', 'subestacion', '🔧', '#20B2AA', 10),
+    ('FOTOV', 'Sistemas Fotovoltaicos', 'Cálculo de sistemas solares fotovoltaicos', 'electricidad', '☀️', '#FFA500', 11)
+ON CONFLICT (codigo) DO UPDATE SET
+    nombre = EXCLUDED.nombre,
+    descripcion = EXCLUDED.descripcion,
+    categoria = EXCLUDED.categoria,
+    icono = EXCLUDED.icono,
+    color = EXCLUDED.color,
+    orden = EXCLUDED.orden,
+    activo = TRUE;
+
+-- Desactivar tipos de cálculos eliminados (ya no se usan)
+UPDATE tipo_calculos SET activo = FALSE WHERE codigo IN ('EMER', 'CARGAS');
 
 -- Update calculos table to reference tipo_calculos
 ALTER TABLE calculos 
