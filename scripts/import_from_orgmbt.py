@@ -213,7 +213,11 @@ class Importer:
         print()
 
     async def import_proyectos(self) -> None:
-        """Import projects from orgmbt."""
+        """Import projects from orgmbt.
+
+        Note: Projects don't have empresa/ingeniero directly in orgmcalc.
+        Those are assigned per calculation (calculo).
+        """
         print("=== Importing Proyectos ===")
 
         # Get existing proyectos from target to check for duplicates
@@ -224,7 +228,7 @@ class Importer:
         # Fetch proyectos from source
         async with self.source_conn.cursor() as cur:  # type: ignore[union-attr]
             await cur.execute("""
-                SELECT id, proyecto, subproyecto, metadata, id_empresa, id_ingeniero, created_at, updated_at
+                SELECT id, proyecto, subproyecto, metadata, created_at, updated_at
                 FROM proyectos
                 ORDER BY id
             """)
@@ -248,21 +252,18 @@ class Importer:
                 self.stats["proyectos_imported"] += 1
                 continue
 
-            # Insert into target
+            # Insert into target (without empresa/ingeniero)
             async with self.target_conn.cursor() as cur:  # type: ignore[union-attr]
                 await cur.execute(
                     """
-                    INSERT INTO projects (id, nombre, ubicacion, fecha, estado, 
-                                         id_empresa, id_ingeniero, created_at, updated_at)
-                    VALUES (%s, %s, %s, NOW()::date, 'activo', %s, %s, %s, %s)
+                    INSERT INTO projects (id, nombre, ubicacion, fecha, estado, created_at, updated_at)
+                    VALUES (%s, %s, %s, NOW()::date, 'activo', %s, %s)
                     ON CONFLICT (id) DO NOTHING
                 """,
                     (
                         proyecto_id,
                         nombre,
                         ubicacion,
-                        proyecto.get("id_empresa"),
-                        proyecto.get("id_ingeniero"),
                         proyecto["created_at"],
                         proyecto["updated_at"],
                     ),

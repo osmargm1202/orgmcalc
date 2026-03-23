@@ -11,6 +11,8 @@ class ProjectCreate(BaseModel):
     """Request body for POST /proyectos.
 
     Creates a new project with basic information.
+    Note: Projects don't have empresa/ingeniero directly.
+    Each calculation within the project has its own empresa and ingeniero.
     """
 
     model_config = ConfigDict(
@@ -20,8 +22,6 @@ class ProjectCreate(BaseModel):
                 "ubicacion": "Ciudad de Guatemala, Zona 10",
                 "fecha": "2024-03-15",
                 "estado": "activo",
-                "id_empresa": 1,
-                "id_ingeniero": 2,
             }
         }
     )
@@ -37,12 +37,6 @@ class ProjectCreate(BaseModel):
         default="activo",
         max_length=50,
         description="Estado del proyecto: activo, completado, suspendido, etc.",
-    )
-    id_empresa: int | None = Field(
-        default=None, description="Compatibilidad: ID de la empresa asociada al proyecto"
-    )
-    id_ingeniero: int | None = Field(
-        default=None, description="Compatibilidad: ID del ingeniero asociado al proyecto"
     )
 
 
@@ -64,30 +58,23 @@ class ProjectUpdate(BaseModel):
     )
     fecha: date | None = Field(default=None, description="Fecha del proyecto (formato: YYYY-MM-DD)")
     estado: str | None = Field(default=None, max_length=50, description="Estado del proyecto")
-    id_empresa: int | None = Field(
-        default=None, description="ID de la empresa asociada (null para desasociar)"
-    )
-    id_ingeniero: int | None = Field(
-        default=None, description="ID del ingeniero asociado (null para desasociar)"
-    )
 
 
 class ProjectResponse(BaseModel):
     """Response for GET /proyectos/{id}.
 
     Includes project details and logo availability status.
+    Note: empresa/ingeniero are assigned per calculation, not per project.
     """
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "id": 1,
+                "id": "proj-uuid",
                 "nombre": "Edificio Centro Comercial",
                 "ubicacion": "Ciudad de Guatemala, Zona 10",
                 "fecha": "2024-03-15",
                 "estado": "activo",
-                "id_empresa": 1,
-                "id_ingeniero": 2,
                 "created_at": "2024-01-15T10:30:00",
                 "updated_at": "2024-03-20T14:45:00",
                 "logo_available": True,
@@ -95,13 +82,11 @@ class ProjectResponse(BaseModel):
         }
     )
 
-    id: int = Field(..., description="Identificador único del proyecto")
+    id: str = Field(..., description="Identificador único del proyecto")
     nombre: str = Field(..., description="Nombre del proyecto")
     ubicacion: str | None = Field(None, description="Ubicación física")
     fecha: date | None = Field(None, description="Fecha del proyecto")
     estado: str = Field(..., description="Estado actual del proyecto")
-    id_empresa: int | None = Field(None, description="ID de empresa asociada")
-    id_ingeniero: int | None = Field(None, description="ID de ingeniero asociado")
     created_at: str = Field(..., description="Fecha de creación (ISO 8601)")
     updated_at: str = Field(..., description="Última fecha de actualización")
     logo_available: bool = Field(
@@ -118,7 +103,7 @@ class ProjectListItem(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "id": 1,
+                "id": "proj-uuid",
                 "nombre": "Edificio Centro Comercial",
                 "ubicacion": "Ciudad de Guatemala",
                 "estado": "activo",
@@ -128,7 +113,7 @@ class ProjectListItem(BaseModel):
         }
     )
 
-    id: int = Field(..., description="Identificador único")
+    id: str = Field(..., description="Identificador único")
     nombre: str = Field(..., description="Nombre del proyecto")
     ubicacion: str | None = Field(None, description="Ubicación física")
     estado: str = Field(..., description="Estado del proyecto")

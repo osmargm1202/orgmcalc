@@ -2,15 +2,15 @@
 -- Creates: schema_migrations (managed by runner), projects, empresas, ingenieros
 -- NOTE: Using TEXT for IDs to maintain compatibility with orgmbt UUIDs
 
--- Projects table (paridad con orgmbt)
+-- Projects table
+-- NOTE: Projects don't have empresa/ingeniero directly.
+-- Each calculation (calculo) has its own empresa and ingeniero assignment.
 CREATE TABLE IF NOT EXISTS projects (
     id TEXT PRIMARY KEY,
     nombre TEXT NOT NULL,
     ubicacion TEXT,
     fecha DATE,
     estado TEXT DEFAULT 'activo',
-    id_empresa TEXT,
-    id_ingeniero TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
