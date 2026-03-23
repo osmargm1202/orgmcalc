@@ -29,7 +29,7 @@ async def listar_proyectos(
 
 
 @router.get("/{project_id}", response_model=ProjectResponse)
-async def obtener_proyecto(project_id: int) -> ProjectResponse:
+async def obtener_proyecto(project_id: str) -> ProjectResponse:
     """Obtener proyecto por ID.
 
     Args:
@@ -79,7 +79,7 @@ async def crear_proyecto(
     response_model=ProjectResponse,
 )
 async def actualizar_proyecto(
-    project_id: int,
+    project_id: str,
     req: ProjectUpdate,
     user: AuthRequiredDep,
 ) -> ProjectResponse:
@@ -113,7 +113,7 @@ async def actualizar_proyecto(
     status_code=204,
 )
 async def eliminar_proyecto(
-    project_id: int,
+    project_id: str,
     user: AuthRequiredDep,
 ) -> Response:
     """Eliminar proyecto.

@@ -24,7 +24,7 @@ class ProjectsService:
         return projects
 
     @staticmethod
-    async def get_project(project_id: int) -> dict[str, Any] | None:
+    async def get_project(project_id: str) -> dict[str, Any] | None:
         """Get project with file availability."""
         proj = await ProjectsRepository.get_by_id(project_id)
         if proj:
@@ -40,16 +40,16 @@ class ProjectsService:
         return await ProjectsRepository.create(data)
 
     @staticmethod
-    async def update_project(project_id: int, data: dict[str, Any]) -> dict[str, Any] | None:
+    async def update_project(project_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
         """Update project."""
         return await ProjectsRepository.update(project_id, data)
 
     @staticmethod
-    async def delete_project(project_id: int) -> bool:
+    async def delete_project(project_id: str) -> bool:
         """Delete project."""
         return await ProjectsRepository.delete(project_id)
 
     @staticmethod
-    async def project_exists(project_id: int) -> bool:
+    async def project_exists(project_id: str) -> bool:
         """Check if project exists."""
         return await ProjectsRepository.exists(project_id)

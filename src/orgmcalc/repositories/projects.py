@@ -39,7 +39,7 @@ class ProjectsRepository:
                 return result[0] if result else 0
 
     @staticmethod
-    async def get_by_id(project_id: int) -> dict[str, Any] | None:
+    async def get_by_id(project_id: str) -> dict[str, Any] | None:
         """Get project by ID."""
         async with get_async_connection() as conn:
             async with conn.cursor() as cur:
@@ -76,7 +76,7 @@ class ProjectsRepository:
                 return dict(zip(cols, row))
 
     @staticmethod
-    async def update(project_id: int, data: dict[str, Any]) -> dict[str, Any] | None:
+    async def update(project_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
         """Update project fields."""
         fields = []
         params = {"id": project_id}
@@ -109,7 +109,7 @@ class ProjectsRepository:
                 return dict(zip(cols, row))
 
     @staticmethod
-    async def delete(project_id: int) -> bool:
+    async def delete(project_id: str) -> bool:
         """Delete project by ID. Returns True if deleted."""
         async with get_async_connection() as conn:
             async with conn.cursor() as cur:
@@ -121,7 +121,7 @@ class ProjectsRepository:
                 return result is not None
 
     @staticmethod
-    async def exists(project_id: int) -> bool:
+    async def exists(project_id: str) -> bool:
         """Check if project exists."""
         async with get_async_connection() as conn:
             async with conn.cursor() as cur:
