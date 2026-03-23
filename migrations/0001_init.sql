@@ -30,12 +30,14 @@ CREATE TABLE IF NOT EXISTS empresas (
 );
 
 -- Engineers/Ingenieros (global registry)
+-- id_empresas: empty string = works for all companies, comma-separated list = specific companies
 CREATE TABLE IF NOT EXISTS ingenieros (
     id TEXT PRIMARY KEY,
     nombre TEXT NOT NULL,
     email TEXT,
     telefono TEXT,
     profesion TEXT,
+    id_empresas TEXT DEFAULT '', -- comma-separated list or empty for all
     foto_perfil_url TEXT,
     foto_carnet_url TEXT,
     foto_certificacion_url TEXT,
@@ -48,3 +50,4 @@ CREATE INDEX IF NOT EXISTS idx_projects_nombre ON projects(nombre);
 CREATE INDEX IF NOT EXISTS idx_empresas_nombre ON empresas(nombre);
 CREATE INDEX IF NOT EXISTS idx_ingenieros_nombre ON ingenieros(nombre);
 CREATE INDEX IF NOT EXISTS idx_ingenieros_email ON ingenieros(email);
+CREATE INDEX IF NOT EXISTS idx_ingenieros_empresas ON ingenieros(id_empresas) WHERE id_empresas != '';

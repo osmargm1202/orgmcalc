@@ -184,10 +184,10 @@ class Importer:
             async with self.target_conn.cursor() as cur:  # type: ignore[union-attr]
                 await cur.execute(
                     """
-                    INSERT INTO ingenieros (id, nombre, email, telefono, profesion,
+                    INSERT INTO ingenieros (id, nombre, email, telefono, profesion, id_empresas,
                                            foto_perfil_url, foto_carnet_url, foto_certificacion_url,
                                            created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (id) DO NOTHING
                 """,
                     (
@@ -198,6 +198,7 @@ class Importer:
                         if ingeniero.get("telefono_celular")
                         else None,
                         profesion,
+                        ingeniero.get("id_empresas", ""),  # Import company restrictions
                         None,  # foto_perfil_url
                         None,  # foto_carnet_url
                         None,  # foto_certificacion_url
