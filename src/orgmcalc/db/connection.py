@@ -4,9 +4,11 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import psycopg
-from psycopg import AsyncConnection, Connection
+from psycopg import Connection
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from orgmcalc.config import get_settings
+from orgmcalc.db.session import get_session
 
 _settings = get_settings()
 
@@ -27,10 +29,7 @@ async def close_pool() -> None:
 
 
 @asynccontextmanager
-async def get_async_connection() -> AsyncGenerator[AsyncConnection, None]:
-    """Get async connection. Creates new connection per request for Neon compatibility."""
-    conn = await psycopg.AsyncConnection.connect(_settings.database_dsn)
-    try:
-        yield conn
-    finally:
-        await conn.close()
+async def get_async_connection() -> AsyncGenerator[AsyncSession, None]:
+    """Get async connection. Delegates to get_session for backwards compatibility."""
+    async with get_session() as session:
+        yield session

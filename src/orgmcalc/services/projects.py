@@ -22,7 +22,9 @@ class ProjectsService:
             file_meta = await FilesRepository.get_active("project", proj["id"], "logo")
             if file_meta:
                 proj["logo_available"] = True
-            cliente_file_meta = await FilesRepository.get_active("project", proj["id"], "cliente_logo")
+            cliente_file_meta = await FilesRepository.get_active(
+                "project", proj["id"], "cliente_logo"
+            )
             if cliente_file_meta:
                 proj["cliente_logo_available"] = True
         return projects
@@ -37,7 +39,9 @@ class ProjectsService:
             file_meta = await FilesRepository.get_active("project", project_id, "logo")
             if file_meta:
                 proj["logo_available"] = True
-            cliente_file_meta = await FilesRepository.get_active("project", project_id, "cliente_logo")
+            cliente_file_meta = await FilesRepository.get_active(
+                "project", project_id, "cliente_logo"
+            )
             if cliente_file_meta:
                 proj["cliente_logo_available"] = True
         return proj

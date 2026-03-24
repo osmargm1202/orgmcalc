@@ -4,7 +4,30 @@ from __future__ import annotations
 
 from typing import Any
 
-from orgmcalc.db.connection import get_async_connection
+from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
+
+from orgmcalc.db.session import get_session
+from orgmcalc.models import Calculo
+
+
+def _calculo_to_dict(calculo: Calculo, include_relations: bool = True) -> dict[str, Any]:
+    """Convert Calculo model to dict with formatted timestamps."""
+    result = {}
+    for c in calculo.__table__.columns:
+        val = getattr(calculo, c.name)
+        if hasattr(val, "isoformat"):
+            result[c.name] = val.isoformat()
+        else:
+            result[c.name] = val
+
+    if include_relations:
+        if calculo.empresa is not None:
+            result["empresa_nombre"] = calculo.empresa.nombre
+        if calculo.ingeniero is not None:
+            result["ingeniero_nombre"] = calculo.ingeniero.nombre
+            result["ingeniero_profesion"] = getattr(calculo.ingeniero, "profesion", None)
+    return result
 
 
 class CalculosRepository:
@@ -18,92 +41,66 @@ class CalculosRepository:
         project_id: str, offset: int = 0, limit: int = 100
     ) -> list[dict[str, Any]]:
         """List calculations for a project with empresa and ingeniero info."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    SELECT
-                        c.id, c.project_id, c.tipo_calculo_id, c.codigo, c.nombre,
-                        c.descripcion, c.estado, c.fecha_creacion,
-                        c.empresa_id, e.nombre as empresa_nombre,
-                        c.ingeniero_id, i.nombre as ingeniero_nombre,
-                        c.created_at::text, c.updated_at::text
-                    FROM calculos c
-                    LEFT JOIN empresas e ON c.empresa_id = e.id
-                    LEFT JOIN ingenieros i ON c.ingeniero_id = i.id
-                    WHERE c.project_id = %s
-                    ORDER BY c.fecha_creacion DESC, c.id DESC
-                    OFFSET %s LIMIT %s
-                    """,
-                    (project_id, offset, limit),
-                )
-                rows = await cur.fetchall()
-                cols = [desc[0] for desc in cur.description]
-                return [dict(zip(cols, row)) for row in rows]
+        async with get_session() as session:
+            result = await session.execute(
+                select(Calculo)
+                .options(selectinload(Calculo.empresa), selectinload(Calculo.ingeniero))
+                .where(Calculo.project_id == project_id)
+                .order_by(Calculo.fecha_creacion.desc(), Calculo.id.desc())
+                .offset(offset)
+                .limit(limit)
+            )
+            calculos = result.scalars().all()
+            return [_calculo_to_dict(c) for c in calculos]
 
     @staticmethod
     async def count_by_project(project_id: str) -> int:
         """Count calculations for a project."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    "SELECT COUNT(*) FROM calculos WHERE project_id = %s",
-                    (project_id,),
-                )
-                result = await cur.fetchone()
-                return result[0] if result else 0
+        async with get_session() as session:
+            result = await session.execute(
+                select(func.count()).select_from(Calculo).where(Calculo.project_id == project_id)
+            )
+            return result.scalar_one()
 
     @staticmethod
     async def get_by_id(calculo_id: str) -> dict[str, Any] | None:
         """Get calculation by ID with empresa and ingeniero details."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    SELECT
-                        c.id, c.project_id, c.tipo_calculo_id, c.codigo, c.nombre,
-                        c.descripcion, c.estado, c.fecha_creacion,
-                        c.empresa_id, e.nombre as empresa_nombre,
-                        c.ingeniero_id, i.nombre as ingeniero_nombre, i.profesion as ingeniero_profesion,
-                        c.parametros, c.version,
-                        c.created_at::text, c.updated_at::text
-                    FROM calculos c
-                    LEFT JOIN empresas e ON c.empresa_id = e.id
-                    LEFT JOIN ingenieros i ON c.ingeniero_id = i.id
-                    WHERE c.id = %s
-                    """,
-                    (calculo_id,),
-                )
-                row = await cur.fetchone()
-                if not row:
-                    return None
-                cols = [desc[0] for desc in cur.description]
-                return dict(zip(cols, row))
+        async with get_session() as session:
+            result = await session.execute(
+                select(Calculo)
+                .options(selectinload(Calculo.empresa), selectinload(Calculo.ingeniero))
+                .where(Calculo.id == calculo_id)
+            )
+            calculo = result.scalar_one_or_none()
+            if calculo is None:
+                return None
+            return _calculo_to_dict(calculo)
 
     @staticmethod
     async def create(data: dict[str, Any]) -> dict[str, Any]:
         """Create a new calculation with empresa and ingeniero."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    INSERT INTO calculos (
-                        project_id, tipo_calculo_id, codigo, nombre, descripcion, estado,
-                        empresa_id, ingeniero_id
-                    )
-                    VALUES (
-                        %(project_id)s, %(tipo_calculo_id)s, %(codigo)s, %(nombre)s,
-                        %(descripcion)s, %(estado)s, %(empresa_id)s, %(ingeniero_id)s
-                    )
-                    RETURNING id, project_id, tipo_calculo_id, codigo, nombre, descripcion, estado,
-                              empresa_id, ingeniero_id, fecha_creacion,
-                              created_at::text, updated_at::text
-                    """,
-                    data,
-                )
-                row = await cur.fetchone()
-                cols = [desc[0] for desc in cur.description]
-                return dict(zip(cols, row))
+        calculo = Calculo(
+            project_id=data["project_id"],
+            tipo_calculo_id=data.get("tipo_calculo_id"),
+            codigo=data["codigo"],
+            nombre=data["nombre"],
+            descripcion=data.get("descripcion"),
+            estado=data.get("estado", "borrador"),
+            empresa_id=data["empresa_id"],
+            ingeniero_id=data["ingeniero_id"],
+            parametros=data.get("parametros", {}),
+        )
+        async with get_session() as session:
+            session.add(calculo)
+            await session.flush()
+            await session.refresh(calculo)
+            result = await session.execute(
+                select(Calculo)
+                .options(selectinload(Calculo.empresa), selectinload(Calculo.ingeniero))
+                .where(Calculo.id == calculo.id)
+            )
+            calculo = result.scalar_one()
+            return _calculo_to_dict(calculo)
 
     @staticmethod
     async def update(calculo_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
@@ -117,75 +114,59 @@ class CalculosRepository:
             "ingeniero_id",
             "tipo_calculo_id",
         ]
+        async with get_session() as session:
+            result = await session.execute(
+                select(Calculo)
+                .options(selectinload(Calculo.empresa), selectinload(Calculo.ingeniero))
+                .where(Calculo.id == calculo_id)
+            )
+            calculo = result.scalar_one_or_none()
+            if calculo is None:
+                return None
 
-        fields = []
-        params: dict[str, Any] = {"id": calculo_id}
+            for key in allowed_fields:
+                if key in data and data[key] is not None:
+                    setattr(calculo, key, data[key])
 
-        for key in allowed_fields:
-            if key in data and data[key] is not None:
-                fields.append(f"{key} = %({key})s")
-                params[key] = data[key]
-
-        if not fields:
-            return await CalculosRepository.get_by_id(calculo_id)
-
-        fields.append("updated_at = now()")
-
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    f"""
-                    UPDATE calculos
-                    SET {", ".join(fields)}
-                    WHERE id = %(id)s
-                    RETURNING id, project_id, tipo_calculo_id, codigo, nombre, descripcion, estado,
-                              empresa_id, ingeniero_id, fecha_creacion,
-                              created_at::text, updated_at::text
-                    """,
-                    params,
-                )
-                row = await cur.fetchone()
-                if not row:
-                    return None
-                cols = [desc[0] for desc in cur.description]
-                return dict(zip(cols, row))
+            calculo.updated_at = func.now()
+            await session.flush()
+            await session.refresh(calculo)
+            result = await session.execute(
+                select(Calculo)
+                .options(selectinload(Calculo.empresa), selectinload(Calculo.ingeniero))
+                .where(Calculo.id == calculo_id)
+            )
+            calculo = result.scalar_one()
+            return _calculo_to_dict(calculo)
 
     @staticmethod
     async def delete(calculo_id: str) -> bool:
         """Delete calculation by ID. Returns True if deleted."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    "DELETE FROM calculos WHERE id = %s RETURNING id",
-                    (calculo_id,),
-                )
-                result = await cur.fetchone()
-                return result is not None
+        async with get_session() as session:
+            result = await session.execute(select(Calculo).where(Calculo.id == calculo_id))
+            calculo = result.scalar_one_or_none()
+            if calculo is None:
+                return False
+            await session.delete(calculo)
+            return True
 
     @staticmethod
     async def exists(calculo_id: str) -> bool:
         """Check if calculation exists."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    "SELECT 1 FROM calculos WHERE id = %s",
-                    (calculo_id,),
-                )
-                return await cur.fetchone() is not None
+        async with get_session() as session:
+            result = await session.execute(
+                select(Calculo.id).where(Calculo.id == calculo_id).limit(1)
+            )
+            return result.scalar_one_or_none() is not None
 
     @staticmethod
     async def get_by_codigo_and_project(project_id: str, codigo: str) -> dict[str, Any] | None:
         """Get calculation by project ID and codigo (for uniqueness check)."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    SELECT id FROM calculos
-                    WHERE project_id = %s AND codigo = %s
-                    """,
-                    (project_id, codigo),
-                )
-                row = await cur.fetchone()
-                if not row:
-                    return None
-                return {"id": row[0]}
+        async with get_session() as session:
+            result = await session.execute(
+                select(Calculo.id).where(Calculo.project_id == project_id, Calculo.codigo == codigo)
+            )
+            calc_id = result.scalar_one_or_none()
+            if calc_id is None:
+                return None
+            return {"id": calc_id}

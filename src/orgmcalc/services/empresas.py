@@ -1,4 +1,5 @@
 """Empresas service - business logic."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -22,7 +23,7 @@ class EmpresasService:
         return empresas
 
     @staticmethod
-    async def get_empresa(empresa_id: int) -> dict[str, Any] | None:
+    async def get_empresa(empresa_id: str) -> dict[str, Any] | None:
         """Get company with file availability."""
         emp = await EmpresasRepository.get_by_id(empresa_id)
         if emp:
@@ -38,16 +39,16 @@ class EmpresasService:
         return await EmpresasRepository.create(data)
 
     @staticmethod
-    async def update_empresa(empresa_id: int, data: dict[str, Any]) -> dict[str, Any] | None:
+    async def update_empresa(empresa_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
         """Update company."""
         return await EmpresasRepository.update(empresa_id, data)
 
     @staticmethod
-    async def delete_empresa(empresa_id: int) -> bool:
+    async def delete_empresa(empresa_id: str) -> bool:
         """Delete company."""
         return await EmpresasRepository.delete(empresa_id)
 
     @staticmethod
-    async def empresa_exists(empresa_id: int) -> bool:
+    async def empresa_exists(empresa_id: str) -> bool:
         """Check if company exists."""
         return await EmpresasRepository.exists(empresa_id)

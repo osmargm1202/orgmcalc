@@ -22,7 +22,7 @@ async def listar_empresas(
 
 
 @router.get("/{empresa_id}", response_model=EmpresaResponse)
-async def obtener_empresa(empresa_id: int) -> EmpresaResponse:
+async def obtener_empresa(empresa_id: str) -> EmpresaResponse:
     """Obtener empresa por ID."""
     empresa = await EmpresasService.get_empresa(empresa_id)
     if not empresa:
@@ -43,7 +43,7 @@ async def crear_empresa(
 
 @router.patch("/{empresa_id}", response_model=EmpresaResponse)
 async def actualizar_empresa(
-    empresa_id: int,
+    empresa_id: str,
     req: EmpresaUpdate,
     user: AuthRequiredDep,
 ) -> EmpresaResponse:
@@ -59,7 +59,7 @@ async def actualizar_empresa(
 
 @router.delete("/{empresa_id}", status_code=204)
 async def eliminar_empresa(
-    empresa_id: int,
+    empresa_id: str,
     user: AuthRequiredDep,
 ) -> Response:
     """Eliminar empresa. Requiere autenticación."""

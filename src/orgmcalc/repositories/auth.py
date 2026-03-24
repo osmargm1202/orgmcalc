@@ -7,7 +7,47 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from orgmcalc.db.connection import get_async_connection
+from sqlalchemy import and_, select, update
+from sqlalchemy.orm import selectinload
+
+from orgmcalc.db.session import get_session
+from orgmcalc.models import AuthSession, AuthUser
+
+
+def _user_to_dict(user: AuthUser) -> dict[str, Any]:
+    """Convert AuthUser model to dict with formatted timestamps."""
+    return {
+        "id": str(user.id),
+        "google_id": user.google_id,
+        "email": user.email,
+        "name": user.name,
+        "given_name": user.given_name,
+        "family_name": user.family_name,
+        "picture": user.picture,
+        "is_active": user.is_active,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+        "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+    }
+
+
+def _session_to_dict(session: AuthSession, include_user: bool = False) -> dict[str, Any]:
+    """Convert AuthSession model to dict."""
+    result: dict[str, Any] = {
+        "id": str(session.id),
+        "user_id": str(session.user_id),
+        "token_hash": session.token_hash,
+        "expires_at": session.expires_at.isoformat() if session.expires_at else None,
+        "revoked": session.revoked,
+        "created_at": session.created_at.isoformat() if session.created_at else None,
+    }
+    if include_user and session.user is not None:
+        result["user"] = {
+            "id": str(session.user.id),
+            "email": session.user.email,
+            "name": session.user.name,
+            "picture": session.user.picture,
+        }
+    return result
 
 
 class AuthRepository:
@@ -16,62 +56,36 @@ class AuthRepository:
     @staticmethod
     async def get_user_by_google_id(google_id: str) -> dict[str, Any] | None:
         """Get user by Google ID."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    SELECT id, google_id, email, name, given_name, family_name,
-                           picture, is_active, created_at, updated_at
-                    FROM auth_users
-                    WHERE google_id = %s AND is_active = TRUE
-                    """,
-                    (google_id,),
+        async with get_session() as session:
+            result = await session.execute(
+                select(AuthUser).where(
+                    and_(
+                        AuthUser.google_id == google_id,
+                        AuthUser.is_active,
+                    )
                 )
-                row = await cur.fetchone()
-                if row:
-                    return {
-                        "id": str(row[0]),
-                        "google_id": row[1],
-                        "email": row[2],
-                        "name": row[3],
-                        "given_name": row[4],
-                        "family_name": row[5],
-                        "picture": row[6],
-                        "is_active": row[7],
-                        "created_at": row[8].isoformat() if row[8] else None,
-                        "updated_at": row[9].isoformat() if row[9] else None,
-                    }
+            )
+            user = result.scalar_one_or_none()
+            if user is None:
                 return None
+            return _user_to_dict(user)
 
     @staticmethod
     async def get_user_by_id(user_id: str) -> dict[str, Any] | None:
         """Get user by internal ID."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    SELECT id, google_id, email, name, given_name, family_name,
-                           picture, is_active, created_at, updated_at
-                    FROM auth_users
-                    WHERE id = %s AND is_active = TRUE
-                    """,
-                    (UUID(user_id),),
+        async with get_session() as session:
+            result = await session.execute(
+                select(AuthUser).where(
+                    and_(
+                        AuthUser.id == UUID(user_id),
+                        AuthUser.is_active,
+                    )
                 )
-                row = await cur.fetchone()
-                if row:
-                    return {
-                        "id": str(row[0]),
-                        "google_id": row[1],
-                        "email": row[2],
-                        "name": row[3],
-                        "given_name": row[4],
-                        "family_name": row[5],
-                        "picture": row[6],
-                        "is_active": row[7],
-                        "created_at": row[8].isoformat() if row[8] else None,
-                        "updated_at": row[9].isoformat() if row[9] else None,
-                    }
+            )
+            user = result.scalar_one_or_none()
+            if user is None:
                 return None
+            return _user_to_dict(user)
 
     @staticmethod
     async def create_or_update_user(
@@ -83,38 +97,33 @@ class AuthRepository:
         picture: str | None = None,
     ) -> dict[str, Any]:
         """Create or update a user from Google OAuth data."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    INSERT INTO auth_users (google_id, email, name, given_name, family_name, picture)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (google_id) DO UPDATE SET
-                        email = EXCLUDED.email,
-                        name = EXCLUDED.name,
-                        given_name = EXCLUDED.given_name,
-                        family_name = EXCLUDED.family_name,
-                        picture = EXCLUDED.picture,
-                        updated_at = CURRENT_TIMESTAMP
-                    RETURNING id, google_id, email, name, given_name, family_name,
-                              picture, is_active, created_at, updated_at
-                    """,
-                    (google_id, email, name, given_name, family_name, picture),
+        async with get_session() as session:
+            result = await session.execute(select(AuthUser).where(AuthUser.google_id == google_id))
+            existing_user = result.scalar_one_or_none()
+
+            if existing_user:
+                existing_user.email = email
+                existing_user.name = name
+                existing_user.given_name = given_name
+                existing_user.family_name = family_name
+                existing_user.picture = picture
+                existing_user.updated_at = datetime.now(UTC)
+                await session.flush()
+                await session.refresh(existing_user)
+                return _user_to_dict(existing_user)
+            else:
+                new_user = AuthUser(
+                    google_id=google_id,
+                    email=email,
+                    name=name,
+                    given_name=given_name,
+                    family_name=family_name,
+                    picture=picture,
                 )
-                row = await cur.fetchone()
-                await conn.commit()
-                return {
-                    "id": str(row[0]),
-                    "google_id": row[1],
-                    "email": row[2],
-                    "name": row[3],
-                    "given_name": row[4],
-                    "family_name": row[5],
-                    "picture": row[6],
-                    "is_active": row[7],
-                    "created_at": row[8].isoformat() if row[8] else None,
-                    "updated_at": row[9].isoformat() if row[9] else None,
-                }
+                session.add(new_user)
+                await session.flush()
+                await session.refresh(new_user)
+                return _user_to_dict(new_user)
 
     @staticmethod
     def _hash_token(token: str) -> str:
@@ -131,97 +140,72 @@ class AuthRepository:
         token_hash = AuthRepository._hash_token(token)
         expires_at = datetime.now(UTC) + timedelta(seconds=expires_in_seconds)
 
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    INSERT INTO auth_sessions (user_id, token_hash, expires_at)
-                    VALUES (%s, %s, %s)
-                    RETURNING id, user_id, token_hash, expires_at, revoked, created_at
-                    """,
-                    (UUID(user_id), token_hash, expires_at),
-                )
-                row = await cur.fetchone()
-                await conn.commit()
-                return {
-                    "id": str(row[0]),
-                    "user_id": str(row[1]),
-                    "token_hash": row[2],
-                    "expires_at": row[3].isoformat() if row[3] else None,
-                    "revoked": row[4],
-                    "created_at": row[5].isoformat() if row[5] else None,
-                }
+        async with get_session() as session:
+            new_session = AuthSession(
+                user_id=UUID(user_id),
+                token_hash=token_hash,
+                expires_at=expires_at,
+            )
+            session.add(new_session)
+            await session.flush()
+            await session.refresh(new_session)
+            return _session_to_dict(new_session)
 
     @staticmethod
     async def get_session_by_token(token: str) -> dict[str, Any] | None:
         """Get valid session by token."""
         token_hash = AuthRepository._hash_token(token)
 
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    SELECT s.id, s.user_id, s.expires_at, s.revoked, s.created_at,
-                           u.email, u.name, u.picture
-                    FROM auth_sessions s
-                    JOIN auth_users u ON s.user_id = u.id
-                    WHERE s.token_hash = %s
-                      AND s.expires_at > CURRENT_TIMESTAMP
-                      AND s.revoked = FALSE
-                      AND u.is_active = TRUE
-                    """,
-                    (token_hash,),
+        async with get_session() as session:
+            result = await session.execute(
+                select(AuthSession)
+                .options(selectinload(AuthSession.user))
+                .join(AuthUser, AuthSession.user_id == AuthUser.id)
+                .where(
+                    and_(
+                        AuthSession.token_hash == token_hash,
+                        AuthSession.expires_at > datetime.now(UTC),
+                        not AuthSession.revoked,  # type: ignore[arg-type]
+                        AuthUser.is_active,
+                    )
                 )
-                row = await cur.fetchone()
-                if row:
-                    return {
-                        "id": str(row[0]),
-                        "user_id": str(row[1]),
-                        "expires_at": row[2].isoformat() if row[2] else None,
-                        "revoked": row[3],
-                        "created_at": row[4].isoformat() if row[4] else None,
-                        "user": {
-                            "id": str(row[1]),
-                            "email": row[5],
-                            "name": row[6],
-                            "picture": row[7],
-                        },
-                    }
+            )
+            session_obj = result.scalar_one_or_none()
+            if session_obj is None:
                 return None
+            return _session_to_dict(session_obj, include_user=True)
 
     @staticmethod
     async def revoke_session(token: str) -> bool:
         """Revoke a session by token."""
         token_hash = AuthRepository._hash_token(token)
 
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    UPDATE auth_sessions
-                    SET revoked = TRUE, revoked_at = CURRENT_TIMESTAMP
-                    WHERE token_hash = %s AND revoked = FALSE
-                    RETURNING id
-                    """,
-                    (token_hash,),
+        async with get_session() as session:
+            result = await session.execute(
+                select(AuthSession).where(
+                    and_(
+                        AuthSession.token_hash == token_hash,
+                        not AuthSession.revoked,  # type: ignore[arg-type]
+                    )
                 )
-                row = await cur.fetchone()
-                await conn.commit()
-                return row is not None
+            )
+            session_obj = result.scalar_one_or_none()
+            if session_obj is None:
+                return False
+
+            session_obj.revoked = True
+            session_obj.revoked_at = datetime.now(UTC)
+            await session.flush()
+            return True
 
     @staticmethod
     async def update_last_used(token: str) -> None:
         """Update last used timestamp for a session."""
         token_hash = AuthRepository._hash_token(token)
 
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    UPDATE auth_sessions
-                    SET last_used_at = CURRENT_TIMESTAMP
-                    WHERE token_hash = %s
-                    """,
-                    (token_hash,),
-                )
-                await conn.commit()
+        async with get_session() as session:
+            await session.execute(
+                update(AuthSession)
+                .where(AuthSession.token_hash == token_hash)
+                .values(last_used_at=datetime.now(UTC))
+            )

@@ -4,7 +4,22 @@ from __future__ import annotations
 
 from typing import Any
 
-from orgmcalc.db.connection import get_async_connection
+from sqlalchemy import func, select
+
+from orgmcalc.db.session import get_session
+from orgmcalc.models import Project
+
+
+def _project_to_dict(project: Project) -> dict[str, Any]:
+    """Convert Project model to dict with formatted timestamps."""
+    return {
+        c.name: (
+            getattr(project, c.name).isoformat()
+            if hasattr(getattr(project, c.name), "isoformat")
+            else getattr(project, c.name)
+        )
+        for c in project.__table__.columns
+    }
 
 
 class ProjectsRepository:
@@ -13,120 +28,80 @@ class ProjectsRepository:
     @staticmethod
     async def list_all(offset: int = 0, limit: int = 100) -> list[dict[str, Any]]:
         """List all projects with pagination."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    SELECT id, nombre, ubicacion, fecha, estado, cliente,
-                           created_at::text, updated_at::text
-                    FROM projects
-                    ORDER BY created_at DESC
-                    OFFSET %s LIMIT %s
-                    """,
-                    (offset, limit),
-                )
-                rows = await cur.fetchall()
-                cols = [desc[0] for desc in cur.description]
-                return [dict(zip(cols, row)) for row in rows]
+        async with get_session() as session:
+            result = await session.execute(
+                select(Project).order_by(Project.created_at.desc()).offset(offset).limit(limit)
+            )
+            projects = result.scalars().all()
+            return [_project_to_dict(p) for p in projects]
 
     @staticmethod
     async def count_all() -> int:
         """Count total projects."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute("SELECT COUNT(*) FROM projects")
-                result = await cur.fetchone()
-                return result[0] if result else 0
+        async with get_session() as session:
+            result = await session.execute(select(func.count()).select_from(Project))
+            return result.scalar_one()
 
     @staticmethod
     async def get_by_id(project_id: str) -> dict[str, Any] | None:
         """Get project by ID."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    SELECT id, nombre, ubicacion, fecha, estado, cliente,
-                           created_at::text, updated_at::text
-                    FROM projects WHERE id = %s
-                    """,
-                    (project_id,),
-                )
-                row = await cur.fetchone()
-                if not row:
-                    return None
-                cols = [desc[0] for desc in cur.description]
-                return dict(zip(cols, row))
+        async with get_session() as session:
+            result = await session.execute(select(Project).where(Project.id == project_id))
+            project = result.scalar_one_or_none()
+            if project is None:
+                return None
+            return _project_to_dict(project)
 
     @staticmethod
     async def create(data: dict[str, Any]) -> dict[str, Any]:
         """Create a new project."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    INSERT INTO projects (nombre, ubicacion, fecha, estado, cliente)
-                    VALUES (%(nombre)s, %(ubicacion)s, %(fecha)s, %(estado)s, %(cliente)s)
-                    RETURNING id, nombre, ubicacion, fecha, estado, cliente,
-                              created_at::text, updated_at::text
-                    """,
-                    data,
-                )
-                row = await cur.fetchone()
-                cols = [desc[0] for desc in cur.description]
-                return dict(zip(cols, row))
+        project = Project(
+            nombre=data["nombre"],
+            ubicacion=data.get("ubicacion"),
+            fecha=data.get("fecha"),
+            estado=data.get("estado", "activo"),
+            cliente=data.get("cliente"),
+        )
+        async with get_session() as session:
+            session.add(project)
+            await session.flush()
+            await session.refresh(project)
+            return _project_to_dict(project)
 
     @staticmethod
     async def update(project_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
         """Update project fields."""
-        fields = []
-        params = {"id": project_id}
-        for key, value in data.items():
-            if value is not None:
-                fields.append(f"{key} = %({key})s")
-                params[key] = value
-        if not fields:
-            return await ProjectsRepository.get_by_id(project_id)
+        async with get_session() as session:
+            result = await session.execute(select(Project).where(Project.id == project_id))
+            project = result.scalar_one_or_none()
+            if project is None:
+                return None
 
-        params["updated_at"] = "now()"
-        fields.append("updated_at = now()")
+            for key, value in data.items():
+                if value is not None and hasattr(project, key):
+                    setattr(project, key, value)
 
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    f"""
-                    UPDATE projects
-                    SET {", ".join(fields)}
-                    WHERE id = %(id)s
-                    RETURNING id, nombre, ubicacion, fecha, estado, cliente,
-                              created_at::text, updated_at::text
-                    """,
-                    params,
-                )
-                row = await cur.fetchone()
-                if not row:
-                    return None
-                cols = [desc[0] for desc in cur.description]
-                return dict(zip(cols, row))
+            project.updated_at = func.now()
+            await session.flush()
+            await session.refresh(project)
+            return _project_to_dict(project)
 
     @staticmethod
     async def delete(project_id: str) -> bool:
         """Delete project by ID. Returns True if deleted."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    "DELETE FROM projects WHERE id = %s RETURNING id",
-                    (project_id,),
-                )
-                result = await cur.fetchone()
-                return result is not None
+        async with get_session() as session:
+            result = await session.execute(select(Project).where(Project.id == project_id))
+            project = result.scalar_one_or_none()
+            if project is None:
+                return False
+            await session.delete(project)
+            return True
 
     @staticmethod
     async def exists(project_id: str) -> bool:
         """Check if project exists."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    "SELECT 1 FROM projects WHERE id = %s",
-                    (project_id,),
-                )
-                return await cur.fetchone() is not None
+        async with get_session() as session:
+            result = await session.execute(
+                select(Project.id).where(Project.id == project_id).limit(1)
+            )
+            return result.scalar_one_or_none() is not None

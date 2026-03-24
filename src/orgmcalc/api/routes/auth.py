@@ -6,6 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
+from fastapi.security import HTTPAuthorizationCredentials
 
 from orgmcalc.api.dependencies import AuthRequiredDep, security
 from orgmcalc.schemas.auth import LogoutResponse, TokenResponse, UserInfo
@@ -70,7 +71,7 @@ async def oauth_callback(
 
 @router.post("/auth/logout", response_model=LogoutResponse)
 async def logout(
-    credentials: Annotated[object, Depends(security)],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
 ) -> LogoutResponse:
     """Revoke current session.
 
@@ -84,7 +85,6 @@ async def logout(
 
     Raises:
         HTTPException: 401 if no valid token provided
-
     """
     if not credentials:
         raise HTTPException(

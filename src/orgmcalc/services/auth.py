@@ -6,6 +6,7 @@ import secrets
 from typing import Any
 
 import httpx
+from fastapi import HTTPException, status
 
 from orgmcalc.config import get_settings
 from orgmcalc.repositories.auth import AuthRepository
@@ -79,7 +80,7 @@ class AuthService:
                 },
             )
             response.raise_for_status()
-            return response.json()
+            return dict(response.json())
 
     @staticmethod
     async def get_google_user_info(access_token: str) -> dict[str, Any]:
@@ -98,7 +99,7 @@ class AuthService:
                 headers={"Authorization": f"Bearer {access_token}"},
             )
             response.raise_for_status()
-            return response.json()
+            return dict(response.json())
 
     @staticmethod
     def generate_session_token() -> str:
@@ -125,11 +126,15 @@ class AuthService:
             Token response with user info and session token
 
         """
-        # Exchange code for access token
         token_data = await AuthService.exchange_code_for_token(code, redirect_uri)
         access_token = token_data.get("access_token")
 
-        # Get user info from Google
+        if not access_token:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No access token received from Google",
+            )
+
         google_user = await AuthService.get_google_user_info(access_token)
 
         # Create or update user in database

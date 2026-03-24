@@ -4,7 +4,22 @@ from __future__ import annotations
 
 from typing import Any
 
-from orgmcalc.db.connection import get_async_connection
+from sqlalchemy import func, select
+
+from orgmcalc.db.session import get_session
+from orgmcalc.models import Empresa
+
+
+def _empresa_to_dict(empresa: Empresa) -> dict[str, Any]:
+    """Convert Empresa model to dict with formatted timestamps."""
+    return {
+        c.name: (
+            getattr(empresa, c.name).isoformat()
+            if hasattr(getattr(empresa, c.name), "isoformat")
+            else getattr(empresa, c.name)
+        )
+        for c in empresa.__table__.columns
+    }
 
 
 class EmpresasRepository:
@@ -13,120 +28,81 @@ class EmpresasRepository:
     @staticmethod
     async def list_all(offset: int = 0, limit: int = 100) -> list[dict[str, Any]]:
         """List all companies."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    SELECT id, nombre, contacto, telefono, correo, direccion, ciudad,
-                           created_at::text, updated_at::text
-                    FROM empresas
-                    ORDER BY nombre
-                    OFFSET %s LIMIT %s
-                    """,
-                    (offset, limit),
-                )
-                rows = await cur.fetchall()
-                cols = [desc[0] for desc in cur.description]
-                return [dict(zip(cols, row)) for row in rows]
+        async with get_session() as session:
+            result = await session.execute(
+                select(Empresa).order_by(Empresa.nombre).offset(offset).limit(limit)
+            )
+            empresas = result.scalars().all()
+            return [_empresa_to_dict(e) for e in empresas]
 
     @staticmethod
     async def count_all() -> int:
         """Count total companies."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute("SELECT COUNT(*) FROM empresas")
-                result = await cur.fetchone()
-                return result[0] if result else 0
+        async with get_session() as session:
+            result = await session.execute(select(func.count()).select_from(Empresa))
+            return result.scalar_one()
 
     @staticmethod
-    async def get_by_id(empresa_id: int) -> dict[str, Any] | None:
+    async def get_by_id(empresa_id: str) -> dict[str, Any] | None:
         """Get company by ID."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    SELECT id, nombre, contacto, telefono, correo, direccion, ciudad,
-                           created_at::text, updated_at::text
-                    FROM empresas WHERE id = %s
-                    """,
-                    (empresa_id,),
-                )
-                row = await cur.fetchone()
-                if not row:
-                    return None
-                cols = [desc[0] for desc in cur.description]
-                return dict(zip(cols, row))
+        async with get_session() as session:
+            result = await session.execute(select(Empresa).where(Empresa.id == empresa_id))
+            empresa = result.scalar_one_or_none()
+            if empresa is None:
+                return None
+            return _empresa_to_dict(empresa)
 
     @staticmethod
     async def create(data: dict[str, Any]) -> dict[str, Any]:
         """Create a new company."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    INSERT INTO empresas (nombre, contacto, telefono, correo, direccion, ciudad)
-                    VALUES (%(nombre)s, %(contacto)s, %(telefono)s,
-                            %(correo)s, %(direccion)s, %(ciudad)s)
-                    RETURNING id, nombre, contacto, telefono, correo, direccion, ciudad,
-                              created_at::text, updated_at::text
-                    """,
-                    data,
-                )
-                row = await cur.fetchone()
-                cols = [desc[0] for desc in cur.description]
-                return dict(zip(cols, row))
+        empresa = Empresa(
+            nombre=data["nombre"],
+            contacto=data.get("contacto"),
+            telefono=data.get("telefono"),
+            correo=data.get("correo"),
+            direccion=data.get("direccion"),
+            ciudad=data.get("ciudad"),
+        )
+        async with get_session() as session:
+            session.add(empresa)
+            await session.flush()
+            await session.refresh(empresa)
+            return _empresa_to_dict(empresa)
 
     @staticmethod
-    async def update(empresa_id: int, data: dict[str, Any]) -> dict[str, Any] | None:
+    async def update(empresa_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
         """Update company fields."""
-        fields = []
-        params = {"id": empresa_id}
-        for key, value in data.items():
-            if value is not None:
-                fields.append(f"{key} = %({key})s")
-                params[key] = value
-        if not fields:
-            return await EmpresasRepository.get_by_id(empresa_id)
+        async with get_session() as session:
+            result = await session.execute(select(Empresa).where(Empresa.id == empresa_id))
+            empresa = result.scalar_one_or_none()
+            if empresa is None:
+                return None
 
-        fields.append("updated_at = now()")
+            for key, value in data.items():
+                if value is not None and hasattr(empresa, key):
+                    setattr(empresa, key, value)
 
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    f"""
-                    UPDATE empresas
-                    SET {", ".join(fields)}
-                    WHERE id = %(id)s
-                    RETURNING id, nombre, contacto, telefono, correo, direccion, ciudad,
-                              created_at::text, updated_at::text
-                    """,
-                    params,
-                )
-                row = await cur.fetchone()
-                if not row:
-                    return None
-                cols = [desc[0] for desc in cur.description]
-                return dict(zip(cols, row))
+            empresa.updated_at = func.now()
+            await session.flush()
+            await session.refresh(empresa)
+            return _empresa_to_dict(empresa)
 
     @staticmethod
-    async def delete(empresa_id: int) -> bool:
+    async def delete(empresa_id: str) -> bool:
         """Delete company by ID. Returns True if deleted."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    "DELETE FROM empresas WHERE id = %s RETURNING id",
-                    (empresa_id,),
-                )
-                result = await cur.fetchone()
-                return result is not None
+        async with get_session() as session:
+            result = await session.execute(select(Empresa).where(Empresa.id == empresa_id))
+            empresa = result.scalar_one_or_none()
+            if empresa is None:
+                return False
+            await session.delete(empresa)
+            return True
 
     @staticmethod
-    async def exists(empresa_id: int) -> bool:
+    async def exists(empresa_id: str) -> bool:
         """Check if company exists."""
-        async with get_async_connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    "SELECT 1 FROM empresas WHERE id = %s",
-                    (empresa_id,),
-                )
-                return await cur.fetchone() is not None
+        async with get_session() as session:
+            result = await session.execute(
+                select(Empresa.id).where(Empresa.id == empresa_id).limit(1)
+            )
+            return result.scalar_one_or_none() is not None

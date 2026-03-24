@@ -94,9 +94,9 @@ class ProjectResponse(BaseModel):
 
     id: str = Field(..., description="Identificador único del proyecto")
     nombre: str = Field(..., description="Nombre del proyecto")
-    cliente: str | None = Field(None, description="Nombre del cliente asociado al proyecto")
-    ubicacion: str | None = Field(None, descripción="Ubicación física")
-    fecha: date | None = Field(None, description="Fecha del proyecto")
+    cliente: str | None = Field(default=None, description="Nombre del cliente asociado al proyecto")
+    ubicacion: str | None = Field(default=None, description="Ubicación física")
+    fecha: date | None = Field(default=None, description="Fecha del proyecto")
     estado: str = Field(..., description="Estado actual del proyecto")
     created_at: str = Field(..., description="Fecha de creación (ISO 8601)")
     updated_at: str = Field(..., description="Última fecha de actualización")

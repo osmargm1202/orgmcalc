@@ -24,7 +24,7 @@ class FilesService:
 
     @staticmethod
     async def upload_project_logo(
-        project_id: int, content: bytes, content_type: str, original_name: str | None
+        project_id: str, content: bytes, content_type: str, original_name: str | None
     ) -> dict[str, Any] | None:
         """Upload project logo with single-active semantics."""
         store = get_object_store()
@@ -56,7 +56,7 @@ class FilesService:
 
     @staticmethod
     async def upload_project_cliente_logo(
-        project_id: int, content: bytes, content_type: str, original_name: str | None
+        project_id: str, content: bytes, content_type: str, original_name: str | None
     ) -> dict[str, Any] | None:
         """Upload project client logo with single-active semantics."""
         store = get_object_store()
@@ -85,18 +85,18 @@ class FilesService:
         return result
 
     @staticmethod
-    async def get_project_cliente_logo_url(project_id: int) -> str | None:
+    async def get_project_cliente_logo_url(project_id: str) -> str | None:
         """Get presigned URL for the active project client logo."""
         return await FilesService.get_download_url("project", project_id, "cliente_logo")
 
     @staticmethod
-    async def get_project_cliente_logo_status(project_id: int) -> dict[str, Any]:
+    async def get_project_cliente_logo_status(project_id: str) -> dict[str, Any]:
         """Get status for the active project client logo."""
         return await FilesService.get_file_status("project", project_id, "cliente_logo")
 
     @staticmethod
     async def upload_empresa_logo(
-        empresa_id: int, content: bytes, content_type: str, original_name: str | None
+        empresa_id: str, content: bytes, content_type: str, original_name: str | None
     ) -> dict[str, Any] | None:
         """Upload company logo."""
         store = get_object_store()
@@ -126,7 +126,7 @@ class FilesService:
 
     @staticmethod
     async def upload_ingeniero_perfil(
-        ingeniero_id: int, content: bytes, content_type: str, original_name: str | None
+        ingeniero_id: str, content: bytes, content_type: str, original_name: str | None
     ) -> dict[str, Any] | None:
         """Upload engineer profile photo."""
         store = get_object_store()
@@ -156,7 +156,7 @@ class FilesService:
 
     @staticmethod
     async def upload_ingeniero_carnet(
-        ingeniero_id: int, content: bytes, content_type: str, original_name: str | None
+        ingeniero_id: str, content: bytes, content_type: str, original_name: str | None
     ) -> dict[str, Any] | None:
         """Upload engineer carnet."""
         store = get_object_store()
@@ -186,7 +186,7 @@ class FilesService:
 
     @staticmethod
     async def upload_ingeniero_certificacion(
-        ingeniero_id: int, content: bytes, content_type: str, original_name: str | None
+        ingeniero_id: str, content: bytes, content_type: str, original_name: str | None
     ) -> dict[str, Any] | None:
         """Upload engineer certification."""
         store = get_object_store()
@@ -216,8 +216,8 @@ class FilesService:
 
     @staticmethod
     async def upload_documento_file(
-        project_id: int,
-        documento_id: int,
+        project_id: str,
+        documento_id: str,
         content: bytes,
         content_type: str,
         filename: str,
@@ -248,7 +248,7 @@ class FilesService:
         return result
 
     @staticmethod
-    async def get_download_url(owner_type: str, owner_id: int, asset_type: str) -> str | None:
+    async def get_download_url(owner_type: str, owner_id: str, asset_type: str) -> str | None:
         """Get presigned download URL for active file."""
         store = get_object_store()
         if not store.available:
@@ -261,7 +261,7 @@ class FilesService:
         return store.get_presigned_url(meta["storage_key"])
 
     @staticmethod
-    async def get_file_status(owner_type: str, owner_id: int, asset_type: str) -> dict[str, Any]:
+    async def get_file_status(owner_type: str, owner_id: str, asset_type: str) -> dict[str, Any]:
         """Get file availability status."""
         store = get_object_store()
         if not store.available:

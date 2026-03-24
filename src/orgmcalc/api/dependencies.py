@@ -5,14 +5,14 @@ from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from psycopg import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from orgmcalc.config import Settings, get_settings
 from orgmcalc.db.connection import get_async_connection
 from orgmcalc.services.auth import AuthService
 
 
-async def get_db() -> AsyncGenerator[AsyncConnection, None]:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Dependency to get database connection."""
     async with get_async_connection() as conn:
         yield conn
@@ -24,7 +24,7 @@ async def get_settings_dep() -> Settings:
 
 
 # Type annotations for dependency injection
-DBDep = Annotated[AsyncConnection, Depends(get_db)]
+DBDep = Annotated[AsyncSession, Depends(get_db)]
 SettingsDep = Annotated[Settings, Depends(get_settings_dep)]
 
 

@@ -163,7 +163,7 @@ async def eliminar_calculo_proyecto(
     summary="DEPRECATED: Use empresa field in calculo response",
     description="Este endpoint está obsoleto. La empresa está disponible directamente en el cálculo.",
 )
-async def listar_empresas_calculo_deprecated(project_id: str, calculo_id: str):
+async def listar_empresas_calculo_deprecated(project_id: str, calculo_id: str) -> None:
     """DEPRECATED: Empresas are now directly assigned to calculo via empresa_id."""
     raise HTTPException(
         status_code=410,
@@ -176,7 +176,7 @@ async def listar_empresas_calculo_deprecated(project_id: str, calculo_id: str):
     summary="DEPRECATED: Use ingeniero field in calculo response",
     description="Este endpoint está obsoleto. El ingeniero está disponible directamente en el cálculo.",
 )
-async def listar_ingenieros_calculo_deprecated(project_id: str, calculo_id: str):
+async def listar_ingenieros_calculo_deprecated(project_id: str, calculo_id: str) -> None:
     """DEPRECATED: Ingenieros are now directly assigned to calculo via ingeniero_id."""
     raise HTTPException(
         status_code=410,

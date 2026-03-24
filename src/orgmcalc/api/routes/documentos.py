@@ -14,7 +14,7 @@ router = APIRouter(tags=["documentos"])
 
 @router.get("/proyectos/{project_id}/documentos", response_model=list[DocumentoListItem])
 async def listar_documentos_proyecto(
-    project_id: int,
+    project_id: str,
     offset: int = Query(0, ge=0, description="Offset for pagination"),
     limit: int = Query(100, ge=1, le=500, description="Limit for pagination (max 500)"),
 ) -> list[DocumentoListItem]:
@@ -26,7 +26,7 @@ async def listar_documentos_proyecto(
 
 
 @router.get("/proyectos/{project_id}/documentos/{document_id}", response_model=DocumentoResponse)
-async def obtener_documento_proyecto(project_id: int, document_id: int) -> DocumentoResponse:
+async def obtener_documento_proyecto(project_id: str, document_id: str) -> DocumentoResponse:
     """Obtener documento de un proyecto."""
     if not await ProjectsService.project_exists(project_id):
         raise HTTPException(status_code=404, detail=f"Proyecto {project_id} no encontrado")
@@ -40,7 +40,7 @@ async def obtener_documento_proyecto(project_id: int, document_id: int) -> Docum
     "/proyectos/{project_id}/documentos", status_code=201, response_model=DocumentoResponse
 )
 async def crear_documento_proyecto(
-    project_id: int,
+    project_id: str,
     req: DocumentoCreate,
     user: AuthRequiredDep,
 ) -> DocumentoResponse:
@@ -55,8 +55,8 @@ async def crear_documento_proyecto(
 
 @router.delete("/proyectos/{project_id}/documentos/{document_id}", status_code=204)
 async def eliminar_documento_proyecto(
-    project_id: int,
-    document_id: int,
+    project_id: str,
+    document_id: str,
     user: AuthRequiredDep,
 ) -> Response:
     """Eliminar documento de un proyecto. Requiere autenticación."""

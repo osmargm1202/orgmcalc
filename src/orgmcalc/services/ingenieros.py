@@ -1,4 +1,5 @@
 """Ingenieros service - business logic."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -12,7 +13,7 @@ class IngenierosService:
 
     @staticmethod
     async def list_ingenieros(
-        offset: int = 0, limit: int = 100, empresa_id: int | None = None
+        offset: int = 0, limit: int = 100, empresa_id: str | None = None
     ) -> list[dict[str, Any]]:
         """List engineers with file availability."""
         ingenieros = await IngenierosRepository.list_all(offset, limit, empresa_id)
@@ -30,7 +31,7 @@ class IngenierosService:
         return ingenieros
 
     @staticmethod
-    async def get_ingeniero(ingeniero_id: int) -> dict[str, Any] | None:
+    async def get_ingeniero(ingeniero_id: str) -> dict[str, Any] | None:
         """Get engineer with file availability."""
         ing = await IngenierosRepository.get_by_id(ingeniero_id)
         if ing:
@@ -51,16 +52,16 @@ class IngenierosService:
         return await IngenierosRepository.create(data)
 
     @staticmethod
-    async def update_ingeniero(ingeniero_id: int, data: dict[str, Any]) -> dict[str, Any] | None:
+    async def update_ingeniero(ingeniero_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
         """Update engineer."""
         return await IngenierosRepository.update(ingeniero_id, data)
 
     @staticmethod
-    async def delete_ingeniero(ingeniero_id: int) -> bool:
+    async def delete_ingeniero(ingeniero_id: str) -> bool:
         """Delete engineer."""
         return await IngenierosRepository.delete(ingeniero_id)
 
     @staticmethod
-    async def ingeniero_exists(ingeniero_id: int) -> bool:
+    async def ingeniero_exists(ingeniero_id: str) -> bool:
         """Check if engineer exists."""
         return await IngenierosRepository.exists(ingeniero_id)

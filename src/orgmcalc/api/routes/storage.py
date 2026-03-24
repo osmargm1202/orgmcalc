@@ -31,7 +31,7 @@ def _check_content_type(content_type: str | None) -> str:
 
 
 @router.get("/proyectos/{project_id}/logo")
-async def descargar_logo_proyecto(project_id: int) -> RedirectResponse:
+async def descargar_logo_proyecto(project_id: str) -> RedirectResponse:
     """Descargar logo del proyecto."""
     if not await ProjectsService.project_exists(project_id):
         raise HTTPException(status_code=404, detail=f"Proyecto {project_id} no encontrado")
@@ -42,7 +42,7 @@ async def descargar_logo_proyecto(project_id: int) -> RedirectResponse:
 
 
 @router.get("/proyectos/{project_id}/logo/status", response_model=FileStatus)
-async def estado_logo_proyecto(project_id: int) -> FileStatus:
+async def estado_logo_proyecto(project_id: str) -> FileStatus:
     """Estado del logo del proyecto."""
     if not await ProjectsService.project_exists(project_id):
         raise HTTPException(status_code=404, detail=f"Proyecto {project_id} no encontrado")
@@ -52,7 +52,7 @@ async def estado_logo_proyecto(project_id: int) -> FileStatus:
 
 @router.post("/proyectos/{project_id}/logo")
 async def subir_logo_proyecto(
-    project_id: int,
+    project_id: str,
     user: AuthRequiredDep,
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
@@ -69,8 +69,9 @@ async def subir_logo_proyecto(
 
 # --- Proyecto Cliente Logo ---
 
+
 @router.get("/proyectos/{project_id}/cliente/logo")
-async def descargar_logo_cliente_proyecto(project_id: int) -> RedirectResponse:
+async def descargar_logo_cliente_proyecto(project_id: str) -> RedirectResponse:
     """Descargar logo del cliente del proyecto."""
     if not await ProjectsService.project_exists(project_id):
         raise HTTPException(status_code=404, detail=f"Proyecto {project_id} no encontrado")
@@ -81,7 +82,7 @@ async def descargar_logo_cliente_proyecto(project_id: int) -> RedirectResponse:
 
 
 @router.get("/proyectos/{project_id}/cliente/logo/status", response_model=FileStatus)
-async def estado_logo_cliente_proyecto(project_id: int) -> FileStatus:
+async def estado_logo_cliente_proyecto(project_id: str) -> FileStatus:
     """Estado del logo del cliente del proyecto."""
     if not await ProjectsService.project_exists(project_id):
         raise HTTPException(status_code=404, detail=f"Proyecto {project_id} no encontrado")
@@ -91,7 +92,7 @@ async def estado_logo_cliente_proyecto(project_id: int) -> FileStatus:
 
 @router.post("/proyectos/{project_id}/cliente/logo")
 async def subir_logo_cliente_proyecto(
-    project_id: int,
+    project_id: str,
     user: AuthRequiredDep,
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
@@ -110,7 +111,7 @@ async def subir_logo_cliente_proyecto(
 
 
 @router.get("/empresas/{empresa_id}/logo")
-async def descargar_logo_empresa(empresa_id: int) -> RedirectResponse:
+async def descargar_logo_empresa(empresa_id: str) -> RedirectResponse:
     """Descargar logo de la empresa."""
     if not await EmpresasService.empresa_exists(empresa_id):
         raise HTTPException(status_code=404, detail=f"Empresa {empresa_id} no encontrada")
@@ -121,7 +122,7 @@ async def descargar_logo_empresa(empresa_id: int) -> RedirectResponse:
 
 
 @router.get("/empresas/{empresa_id}/logo/status", response_model=FileStatus)
-async def estado_logo_empresa(empresa_id: int) -> FileStatus:
+async def estado_logo_empresa(empresa_id: str) -> FileStatus:
     """Estado del logo de la empresa."""
     if not await EmpresasService.empresa_exists(empresa_id):
         raise HTTPException(status_code=404, detail=f"Empresa {empresa_id} no encontrada")
@@ -131,7 +132,7 @@ async def estado_logo_empresa(empresa_id: int) -> FileStatus:
 
 @router.post("/empresas/{empresa_id}/logo")
 async def subir_logo_empresa(
-    empresa_id: int,
+    empresa_id: str,
     user: AuthRequiredDep,
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
@@ -150,7 +151,7 @@ async def subir_logo_empresa(
 
 
 @router.get("/ingenieros/{ingeniero_id}/perfil")
-async def descargar_perfil_ingeniero(ingeniero_id: int) -> RedirectResponse:
+async def descargar_perfil_ingeniero(ingeniero_id: str) -> RedirectResponse:
     """Descargar foto de perfil del ingeniero."""
     if not await IngenierosService.ingeniero_exists(ingeniero_id):
         raise HTTPException(status_code=404, detail=f"Ingeniero {ingeniero_id} no encontrado")
@@ -161,7 +162,7 @@ async def descargar_perfil_ingeniero(ingeniero_id: int) -> RedirectResponse:
 
 
 @router.get("/ingenieros/{ingeniero_id}/perfil/status", response_model=FileStatus)
-async def estado_perfil_ingeniero(ingeniero_id: int) -> FileStatus:
+async def estado_perfil_ingeniero(ingeniero_id: str) -> FileStatus:
     """Estado del perfil del ingeniero."""
     if not await IngenierosService.ingeniero_exists(ingeniero_id):
         raise HTTPException(status_code=404, detail=f"Ingeniero {ingeniero_id} no encontrado")
@@ -171,7 +172,7 @@ async def estado_perfil_ingeniero(ingeniero_id: int) -> FileStatus:
 
 @router.post("/ingenieros/{ingeniero_id}/perfil")
 async def subir_perfil_ingeniero(
-    ingeniero_id: int,
+    ingeniero_id: str,
     user: AuthRequiredDep,
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
@@ -190,7 +191,7 @@ async def subir_perfil_ingeniero(
 
 
 @router.get("/ingenieros/{ingeniero_id}/carnet")
-async def descargar_carnet_ingeniero(ingeniero_id: int) -> RedirectResponse:
+async def descargar_carnet_ingeniero(ingeniero_id: str) -> RedirectResponse:
     """Descargar carnet del ingeniero."""
     if not await IngenierosService.ingeniero_exists(ingeniero_id):
         raise HTTPException(status_code=404, detail=f"Ingeniero {ingeniero_id} no encontrado")
@@ -201,7 +202,7 @@ async def descargar_carnet_ingeniero(ingeniero_id: int) -> RedirectResponse:
 
 
 @router.get("/ingenieros/{ingeniero_id}/carnet/status", response_model=FileStatus)
-async def estado_carnet_ingeniero(ingeniero_id: int) -> FileStatus:
+async def estado_carnet_ingeniero(ingeniero_id: str) -> FileStatus:
     """Estado del carnet del ingeniero."""
     if not await IngenierosService.ingeniero_exists(ingeniero_id):
         raise HTTPException(status_code=404, detail=f"Ingeniero {ingeniero_id} no encontrado")
@@ -211,7 +212,7 @@ async def estado_carnet_ingeniero(ingeniero_id: int) -> FileStatus:
 
 @router.post("/ingenieros/{ingeniero_id}/carnet")
 async def subir_carnet_ingeniero(
-    ingeniero_id: int,
+    ingeniero_id: str,
     user: AuthRequiredDep,
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
@@ -230,7 +231,7 @@ async def subir_carnet_ingeniero(
 
 
 @router.get("/ingenieros/{ingeniero_id}/certificacion")
-async def descargar_certificacion_ingeniero(ingeniero_id: int) -> RedirectResponse:
+async def descargar_certificacion_ingeniero(ingeniero_id: str) -> RedirectResponse:
     """Descargar certificacion del ingeniero."""
     if not await IngenierosService.ingeniero_exists(ingeniero_id):
         raise HTTPException(status_code=404, detail=f"Ingeniero {ingeniero_id} no encontrado")
@@ -241,7 +242,7 @@ async def descargar_certificacion_ingeniero(ingeniero_id: int) -> RedirectRespon
 
 
 @router.get("/ingenieros/{ingeniero_id}/certificacion/status", response_model=FileStatus)
-async def estado_certificacion_ingeniero(ingeniero_id: int) -> FileStatus:
+async def estado_certificacion_ingeniero(ingeniero_id: str) -> FileStatus:
     """Estado de la certificacion del ingeniero."""
     if not await IngenierosService.ingeniero_exists(ingeniero_id):
         raise HTTPException(status_code=404, detail=f"Ingeniero {ingeniero_id} no encontrado")
@@ -251,7 +252,7 @@ async def estado_certificacion_ingeniero(ingeniero_id: int) -> FileStatus:
 
 @router.post("/ingenieros/{ingeniero_id}/certificacion")
 async def subir_certificacion_ingeniero(
-    ingeniero_id: int,
+    ingeniero_id: str,
     user: AuthRequiredDep,
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
@@ -272,7 +273,7 @@ async def subir_certificacion_ingeniero(
 
 
 @router.get("/proyectos/{project_id}/documentos/{document_id}/file")
-async def descargar_documento_file(project_id: int, document_id: int) -> RedirectResponse:
+async def descargar_documento_file(project_id: str, document_id: str) -> RedirectResponse:
     """Descargar archivo de documento."""
     if not await ProjectsService.project_exists(project_id):
         raise HTTPException(status_code=404, detail=f"Proyecto {project_id} no encontrado")
@@ -284,8 +285,8 @@ async def descargar_documento_file(project_id: int, document_id: int) -> Redirec
 
 @router.post("/proyectos/{project_id}/documentos/{document_id}/file")
 async def subir_documento_file(
-    project_id: int,
-    document_id: int,
+    project_id: str,
+    document_id: str,
     user: AuthRequiredDep,
     file: UploadFile = File(...),
 ) -> dict[str, Any]:

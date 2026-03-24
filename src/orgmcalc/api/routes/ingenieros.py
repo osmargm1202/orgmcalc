@@ -20,7 +20,7 @@ router = APIRouter(prefix="/ingenieros", tags=["ingenieros"])
 async def listar_ingenieros(
     offset: int = Query(0, ge=0, description="Offset for pagination"),
     limit: int = Query(100, ge=1, le=500, description="Limit for pagination (max 500)"),
-    empresa_id: int | None = Query(None, description="Filtrar por empresa"),
+    empresa_id: str | None = Query(None, description="Filtrar por empresa"),
 ) -> list[IngenieroListItem]:
     """Listar ingenieros, opcionalmente filtrados por empresa."""
     ingenieros = await IngenierosService.list_ingenieros(offset, limit, empresa_id)
@@ -28,7 +28,7 @@ async def listar_ingenieros(
 
 
 @router.get("/{ingeniero_id}", response_model=IngenieroResponse)
-async def obtener_ingeniero(ingeniero_id: int) -> IngenieroResponse:
+async def obtener_ingeniero(ingeniero_id: str) -> IngenieroResponse:
     """Obtener ingeniero por ID."""
     ingeniero = await IngenierosService.get_ingeniero(ingeniero_id)
     if not ingeniero:
@@ -49,7 +49,7 @@ async def crear_ingeniero(
 
 @router.patch("/{ingeniero_id}", response_model=IngenieroResponse)
 async def actualizar_ingeniero(
-    ingeniero_id: int,
+    ingeniero_id: str,
     req: IngenieroUpdate,
     user: AuthRequiredDep,
 ) -> IngenieroResponse:
@@ -65,7 +65,7 @@ async def actualizar_ingeniero(
 
 @router.delete("/{ingeniero_id}", status_code=204)
 async def eliminar_ingeniero(
-    ingeniero_id: int,
+    ingeniero_id: str,
     user: AuthRequiredDep,
 ) -> Response:
     """Eliminar ingeniero. Requiere autenticación."""
