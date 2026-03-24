@@ -1,6 +1,6 @@
 """Application configuration via pydantic-settings."""
 
-from pydantic import Field, PostgresDsn
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     )
 
     # Database
-    database_url: PostgresDsn = Field(
+    database_url: str = Field(
         default="postgresql://user:password@localhost:5432/orgmcalc",
         description="PostgreSQL connection string",
     )
@@ -56,7 +56,7 @@ class Settings(BaseSettings):
     @property
     def database_dsn(self) -> str:
         """Return database URL as string."""
-        return str(self.database_url)
+        return self.database_url
 
 
 def get_settings() -> Settings:

@@ -22,8 +22,8 @@ class CalculosRepository:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
-                    SELECT 
-                        c.id, c.project_id, c.tipo_calculo_id, c.codigo, c.nombre, 
+                    SELECT
+                        c.id, c.project_id, c.tipo_calculo_id, c.codigo, c.nombre,
                         c.descripcion, c.estado, c.fecha_creacion,
                         c.empresa_id, e.nombre as empresa_nombre,
                         c.ingeniero_id, i.nombre as ingeniero_nombre,
@@ -60,8 +60,8 @@ class CalculosRepository:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
-                    SELECT 
-                        c.id, c.project_id, c.tipo_calculo_id, c.codigo, c.nombre, 
+                    SELECT
+                        c.id, c.project_id, c.tipo_calculo_id, c.codigo, c.nombre,
                         c.descripcion, c.estado, c.fecha_creacion,
                         c.empresa_id, e.nombre as empresa_nombre,
                         c.ingeniero_id, i.nombre as ingeniero_nombre, i.profesion as ingeniero_profesion,
@@ -92,11 +92,11 @@ class CalculosRepository:
                         empresa_id, ingeniero_id
                     )
                     VALUES (
-                        %(project_id)s, %(tipo_calculo_id)s, %(codigo)s, %(nombre)s, 
+                        %(project_id)s, %(tipo_calculo_id)s, %(codigo)s, %(nombre)s,
                         %(descripcion)s, %(estado)s, %(empresa_id)s, %(ingeniero_id)s
                     )
                     RETURNING id, project_id, tipo_calculo_id, codigo, nombre, descripcion, estado,
-                              empresa_id, ingeniero_id, fecha_creacion, 
+                              empresa_id, ingeniero_id, fecha_creacion,
                               created_at::text, updated_at::text
                     """,
                     data,
@@ -139,7 +139,7 @@ class CalculosRepository:
                     SET {", ".join(fields)}
                     WHERE id = %(id)s
                     RETURNING id, project_id, tipo_calculo_id, codigo, nombre, descripcion, estado,
-                              empresa_id, ingeniero_id, fecha_creacion, 
+                              empresa_id, ingeniero_id, fecha_creacion,
                               created_at::text, updated_at::text
                     """,
                     params,
@@ -180,7 +180,7 @@ class CalculosRepository:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
-                    SELECT id FROM calculos 
+                    SELECT id FROM calculos
                     WHERE project_id = %s AND codigo = %s
                     """,
                     (project_id, codigo),

@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query, Response
 
-from fastapi import Depends
-
-from orgmcalc.api.dependencies import AuthRequiredDep, require_auth
+from orgmcalc.api.dependencies import AuthRequiredDep
 from orgmcalc.schemas.projects import ProjectCreate, ProjectResponse, ProjectUpdate
 from orgmcalc.services.projects import ProjectsService
 

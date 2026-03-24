@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID
 
-from orgmcalc.db.connection import init_pool
+from orgmcalc.db.connection import get_async_connection
 
 
 class AuthRepository:
@@ -16,8 +16,7 @@ class AuthRepository:
     @staticmethod
     async def get_user_by_google_id(google_id: str) -> dict[str, Any] | None:
         """Get user by Google ID."""
-        pool = init_pool()
-        async with pool.connection() as conn:
+        async with get_async_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
@@ -47,8 +46,7 @@ class AuthRepository:
     @staticmethod
     async def get_user_by_id(user_id: str) -> dict[str, Any] | None:
         """Get user by internal ID."""
-        pool = init_pool()
-        async with pool.connection() as conn:
+        async with get_async_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
@@ -85,8 +83,7 @@ class AuthRepository:
         picture: str | None = None,
     ) -> dict[str, Any]:
         """Create or update a user from Google OAuth data."""
-        pool = init_pool()
-        async with pool.connection() as conn:
+        async with get_async_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
@@ -131,11 +128,10 @@ class AuthRepository:
         expires_in_seconds: int = 86400,
     ) -> dict[str, Any]:
         """Create a new session."""
-        pool = init_pool()
         token_hash = AuthRepository._hash_token(token)
-        expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in_seconds)
+        expires_at = datetime.now(UTC) + timedelta(seconds=expires_in_seconds)
 
-        async with pool.connection() as conn:
+        async with get_async_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
@@ -159,10 +155,9 @@ class AuthRepository:
     @staticmethod
     async def get_session_by_token(token: str) -> dict[str, Any] | None:
         """Get valid session by token."""
-        pool = init_pool()
         token_hash = AuthRepository._hash_token(token)
 
-        async with pool.connection() as conn:
+        async with get_async_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
@@ -197,10 +192,9 @@ class AuthRepository:
     @staticmethod
     async def revoke_session(token: str) -> bool:
         """Revoke a session by token."""
-        pool = init_pool()
         token_hash = AuthRepository._hash_token(token)
 
-        async with pool.connection() as conn:
+        async with get_async_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
@@ -218,10 +212,9 @@ class AuthRepository:
     @staticmethod
     async def update_last_used(token: str) -> None:
         """Update last used timestamp for a session."""
-        pool = init_pool()
         token_hash = AuthRepository._hash_token(token)
 
-        async with pool.connection() as conn:
+        async with get_async_connection() as conn:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """

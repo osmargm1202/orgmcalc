@@ -18,9 +18,13 @@ class ProjectsService:
         # Enrich with logo availability
         for proj in projects:
             proj["logo_available"] = False
+            proj["cliente_logo_available"] = False
             file_meta = await FilesRepository.get_active("project", proj["id"], "logo")
             if file_meta:
                 proj["logo_available"] = True
+            cliente_file_meta = await FilesRepository.get_active("project", proj["id"], "cliente_logo")
+            if cliente_file_meta:
+                proj["cliente_logo_available"] = True
         return projects
 
     @staticmethod
@@ -29,9 +33,13 @@ class ProjectsService:
         proj = await ProjectsRepository.get_by_id(project_id)
         if proj:
             proj["logo_available"] = False
+            proj["cliente_logo_available"] = False
             file_meta = await FilesRepository.get_active("project", project_id, "logo")
             if file_meta:
                 proj["logo_available"] = True
+            cliente_file_meta = await FilesRepository.get_active("project", project_id, "cliente_logo")
+            if cliente_file_meta:
+                proj["cliente_logo_available"] = True
         return proj
 
     @staticmethod

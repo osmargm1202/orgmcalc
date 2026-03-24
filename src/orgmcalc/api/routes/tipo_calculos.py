@@ -8,21 +8,12 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from orgmcalc.db.connection import get_sync_connection
 from orgmcalc.schemas.calculos import TipoCalculoResponse
 
 router = APIRouter(prefix="/tipo-calculos", tags=["Tipo de Cálculos"])
-
-
-def _get_db_connection():
-    """Get database connection."""
-    conn = get_sync_connection()
-    try:
-        yield conn
-    finally:
-        conn.close()
 
 
 @router.get(
@@ -31,7 +22,7 @@ def _get_db_connection():
     summary="Listar tipos de cálculos predefinidos",
     description="""
     Obtiene la lista de tipos de cálculos predefinidos disponibles.
-    
+
     Estos tipos son fijos y se definen en la base de datos:
     - BT: Cálculo de Baja Tensión
     - SPT: Sistema de Puesta a Tierra
@@ -39,7 +30,7 @@ def _get_db_connection():
     - ILUM: Cálculo de Iluminación
     - CARGAS: Cálculo de Cargas Eléctricas
     - Y más...
-    
+
     Los cálculos deben ser creados usando uno de estos tipos.
     """,
     responses={
@@ -77,12 +68,12 @@ async def list_tipo_calculos(
     try:
         with conn.cursor() as cur:
             query = """
-                SELECT id, codigo, nombre, descripcion, categoria, 
+                SELECT id, codigo, nombre, descripcion, categoria,
                        icono, color, orden, activo, created_at, updated_at
                 FROM tipo_calculos
                 WHERE 1=1
             """
-            params = []
+            params: list[str] = []
 
             if solo_activos:
                 query += " AND activo = TRUE"
@@ -96,7 +87,9 @@ async def list_tipo_calculos(
             cur.execute(query, params)
             rows = cur.fetchall()
 
-            # Convert to dict format
+            if not cur.description:
+                return []
+
             columns = [desc[0] for desc in cur.description]
             result = [dict(zip(columns, row)) for row in rows]
 
@@ -139,6 +132,11 @@ async def get_tipo_calculo(
                     detail=f"Tipo de cálculo con ID {tipo_id} no encontrado",
                 )
 
+            if not cur.description:
+                raise HTTPException(
+                    status_code=500, detail="No se pudo obtener información de columnas"
+                )
+
             columns = [desc[0] for desc in cur.description]
             result = dict(zip(columns, row))
 
@@ -179,6 +177,11 @@ async def get_tipo_calculo_by_codigo(
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Tipo de cálculo con código '{codigo}' no encontrado",
+                )
+
+            if not cur.description:
+                raise HTTPException(
+                    status_code=500, detail="No se pudo obtener información de columnas"
                 )
 
             columns = [desc[0] for desc in cur.description]

@@ -1,14 +1,14 @@
 """Object storage client for R2/S3-compatible storage."""
+
 from __future__ import annotations
 
 from typing import Any
 
-import boto3
-from botocore.config import Config
-from botocore.exceptions import ClientError
+import boto3  # type: ignore[import-untyped]
+from botocore.config import Config  # type: ignore[import-untyped]
+from botocore.exceptions import ClientError  # type: ignore[import-untyped]
 
 from orgmcalc.config import get_settings
-
 
 ALLOWED_IMAGE_TYPES = {"image/png", "image/jpeg", "image/webp", "image/gif"}
 ALLOWED_PDF_TYPE = "application/pdf"
@@ -69,31 +69,14 @@ class ObjectStore:
         if not self._client:
             return None
         try:
-            return self._client.generate_presigned_url(
+            result: str = self._client.generate_presigned_url(
                 "get_object",
                 Params={"Bucket": self._bucket, "Key": key},
                 ExpiresIn=expiration,
             )
+            return result
         except ClientError:
             return None
-
-    def delete_object(self, key: str) -> bool:
-        if not self._client:
-            return False
-        try:
-            self._client.delete_object(Bucket=self._bucket, Key=key)
-            return True
-        except ClientError:
-            return False
-
-    def object_exists(self, key: str) -> bool:
-        if not self._client:
-            return False
-        try:
-            self._client.head_object(Bucket=self._bucket, Key=key)
-            return True
-        except ClientError:
-            return False
 
 
 _store: ObjectStore | None = None

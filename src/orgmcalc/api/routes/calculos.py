@@ -132,9 +132,8 @@ async def actualizar_calculo_proyecto(
     if not data:
         raise HTTPException(status_code=400, detail="Nada que actualizar")
 
-    updated = await CalculosService.update_calculo(calculo_id, data)
+    await CalculosService.update_calculo(calculo_id, data)
 
-    # Return full response
     return await obtener_calculo_proyecto(project_id, calculo_id)
 
 

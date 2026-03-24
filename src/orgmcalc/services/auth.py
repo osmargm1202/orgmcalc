@@ -36,7 +36,7 @@ class AuthService:
         auth_url = (
             "https://accounts.google.com/o/oauth2/v2/auth"
             f"?client_id={client_id}"
-            "&redirect_uri={redirect_uri}"
+            f"&redirect_uri={redirect_uri}"
             "&response_type=code"
             "&scope=openid%20email%20profile"
             "&access_type=offline"

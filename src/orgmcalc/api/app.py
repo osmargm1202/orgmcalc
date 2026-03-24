@@ -1,5 +1,6 @@
 """FastAPI application factory."""
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -23,13 +24,11 @@ from .routes import (
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler - runs migrations and manages pool."""
-    # Startup
     init_pool()
     run_migrations()
     yield
-    # Shutdown
     await close_pool()
 
 

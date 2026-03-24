@@ -10,6 +10,10 @@ class StorageKeys:
         return f"projects/{project_id}/logo.{extension.lstrip('.').lower() or 'png'}"
 
     @staticmethod
+    def project_cliente_logo(project_id: int, extension: str = "png") -> str:
+        return f"projects/{project_id}/cliente/logo.{extension.lstrip('.').lower() or 'png'}"
+
+    @staticmethod
     def empresa_logo(empresa_id: int, extension: str = "png") -> str:
         return f"empresas/{empresa_id}/logo.{extension.lstrip('.').lower() or 'png'}"
 

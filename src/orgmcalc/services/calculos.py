@@ -183,23 +183,3 @@ class CalculosService:
     async def calculo_exists(calculo_id: str) -> bool:
         """Check if calculation exists."""
         return await CalculosRepository.exists(calculo_id)
-
-
-class CalculoEmpresasService:
-    """DEPRECATED: Service for calculation-company association logic.
-
-    This service is kept for backward compatibility but should not be used.
-    Use CalculosService instead - each calculation now has empresa_id directly.
-    """
-
-    pass
-
-
-class CalculoIngenierosService:
-    """DEPRECATED: Service for calculation-engineer association logic.
-
-    This service is kept for backward compatibility but should not be used.
-    Use CalculosService instead - each calculation now has ingeniero_id directly.
-    """
-
-    pass

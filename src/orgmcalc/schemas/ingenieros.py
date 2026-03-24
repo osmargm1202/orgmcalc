@@ -120,11 +120,3 @@ class IngenieroListItem(BaseModel):
     perfil_available: bool = Field(default=False, description="Foto de perfil disponible")
     carnet_available: bool = Field(default=False, description="Carnet disponible")
     certificacion_available: bool = Field(default=False, description="Certificación disponible")
-
-
-class IngenieroFilter(BaseModel):
-    """Filter parameters for listing engineers."""
-
-    model_config = ConfigDict(json_schema_extra={"example": {"empresa_id": "emp-uuid"}})
-
-    empresa_id: str | None = Field(default=None, description="Filtrar por ID de empresa asociada")

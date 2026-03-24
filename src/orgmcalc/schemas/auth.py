@@ -5,35 +5,6 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class OAuthStartRequest(BaseModel):
-    """Request to initiate OAuth flow.
-
-    Contains optional state parameter for CSRF protection.
-    """
-
-    model_config = ConfigDict(
-        json_schema_extra={"example": {"redirect_uri": "http://localhost:3000/auth/callback"}}
-    )
-
-    redirect_uri: str | None = Field(
-        default=None, description="URI de redirección opcional (si no se usa la default)"
-    )
-
-
-class OAuthCallbackRequest(BaseModel):
-    """Request for OAuth callback.
-
-    Contains the authorization code from Google.
-    """
-
-    model_config = ConfigDict(
-        json_schema_extra={"example": {"code": "4/0AX4XfWg...", "state": "random-state-string"}}
-    )
-
-    code: str = Field(..., description="Código de autorización proporcionado por Google")
-    state: str | None = Field(default=None, description="Estado CSRF para validación")
-
-
 class TokenResponse(BaseModel):
     """Response containing authentication token.
 
@@ -101,16 +72,3 @@ class LogoutResponse(BaseModel):
     message: str = Field(
         default="Sesión cerrada correctamente", description="Mensaje de confirmación"
     )
-
-
-class AuthErrorResponse(BaseModel):
-    """Error response for authentication failures."""
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {"detail": "Token inválido o expirado", "error_code": "invalid_token"}
-        }
-    )
-
-    detail: str = Field(..., description="Descripción del error")
-    error_code: str | None = Field(default=None, description="Código de error para debugging")

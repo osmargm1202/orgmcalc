@@ -17,7 +17,7 @@ class ProjectsRepository:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
-                    SELECT id, nombre, ubicacion, fecha, estado,
+                    SELECT id, nombre, ubicacion, fecha, estado, cliente,
                            created_at::text, updated_at::text
                     FROM projects
                     ORDER BY created_at DESC
@@ -45,7 +45,7 @@ class ProjectsRepository:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
-                    SELECT id, nombre, ubicacion, fecha, estado,
+                    SELECT id, nombre, ubicacion, fecha, estado, cliente,
                            created_at::text, updated_at::text
                     FROM projects WHERE id = %s
                     """,
@@ -64,9 +64,9 @@ class ProjectsRepository:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
-                    INSERT INTO projects (nombre, ubicacion, fecha, estado)
-                    VALUES (%(nombre)s, %(ubicacion)s, %(fecha)s, %(estado)s)
-                    RETURNING id, nombre, ubicacion, fecha, estado,
+                    INSERT INTO projects (nombre, ubicacion, fecha, estado, cliente)
+                    VALUES (%(nombre)s, %(ubicacion)s, %(fecha)s, %(estado)s, %(cliente)s)
+                    RETURNING id, nombre, ubicacion, fecha, estado, cliente,
                               created_at::text, updated_at::text
                     """,
                     data,
@@ -97,7 +97,7 @@ class ProjectsRepository:
                     UPDATE projects
                     SET {", ".join(fields)}
                     WHERE id = %(id)s
-                    RETURNING id, nombre, ubicacion, fecha, estado,
+                    RETURNING id, nombre, ubicacion, fecha, estado, cliente,
                               created_at::text, updated_at::text
                     """,
                     params,

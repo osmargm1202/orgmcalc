@@ -29,6 +29,11 @@ class ProjectCreate(BaseModel):
     nombre: str = Field(
         ..., min_length=1, max_length=255, description="Nombre del proyecto (requerido)"
     )
+    cliente: str | None = Field(
+        default=None,
+        max_length=255,
+        description="Nombre del cliente asociado al proyecto",
+    )
     ubicacion: str | None = Field(
         default=None, max_length=500, description="Ubicación física del proyecto"
     )
@@ -52,6 +57,11 @@ class ProjectUpdate(BaseModel):
 
     nombre: str | None = Field(
         default=None, min_length=1, max_length=255, description="Nombre del proyecto"
+    )
+    cliente: str | None = Field(
+        default=None,
+        max_length=255,
+        description="Nombre del cliente asociado al proyecto",
     )
     ubicacion: str | None = Field(
         default=None, max_length=500, description="Ubicación física del proyecto"
@@ -84,7 +94,8 @@ class ProjectResponse(BaseModel):
 
     id: str = Field(..., description="Identificador único del proyecto")
     nombre: str = Field(..., description="Nombre del proyecto")
-    ubicacion: str | None = Field(None, description="Ubicación física")
+    cliente: str | None = Field(None, description="Nombre del cliente asociado al proyecto")
+    ubicacion: str | None = Field(None, descripción="Ubicación física")
     fecha: date | None = Field(None, description="Fecha del proyecto")
     estado: str = Field(..., description="Estado actual del proyecto")
     created_at: str = Field(..., description="Fecha de creación (ISO 8601)")
@@ -92,30 +103,7 @@ class ProjectResponse(BaseModel):
     logo_available: bool = Field(
         default=False, description="Indica si el proyecto tiene un logo disponible"
     )
-
-
-class ProjectListItem(BaseModel):
-    """Item in list of projects.
-
-    Lightweight representation for list views.
-    """
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "id": "proj-uuid",
-                "nombre": "Edificio Centro Comercial",
-                "ubicacion": "Ciudad de Guatemala",
-                "estado": "activo",
-                "created_at": "2024-01-15T10:30:00",
-                "logo_available": False,
-            }
-        }
+    cliente_logo_available: bool = Field(
+        default=False,
+        description="Indica si el proyecto tiene un logo del cliente disponible",
     )
-
-    id: str = Field(..., description="Identificador único")
-    nombre: str = Field(..., description="Nombre del proyecto")
-    ubicacion: str | None = Field(None, description="Ubicación física")
-    estado: str = Field(..., description="Estado del proyecto")
-    created_at: str = Field(..., description="Fecha de creación")
-    logo_available: bool = Field(default=False, description="Indica si tiene logo disponible")

@@ -67,6 +67,45 @@ async def subir_logo_proyecto(
     return {"storage_key": result["storage_key"], "url": result.get("url")}
 
 
+# --- Proyecto Cliente Logo ---
+
+@router.get("/proyectos/{project_id}/cliente/logo")
+async def descargar_logo_cliente_proyecto(project_id: int) -> RedirectResponse:
+    """Descargar logo del cliente del proyecto."""
+    if not await ProjectsService.project_exists(project_id):
+        raise HTTPException(status_code=404, detail=f"Proyecto {project_id} no encontrado")
+    url = await FilesService.get_project_cliente_logo_url(project_id)
+    if not url:
+        raise HTTPException(status_code=404, detail="Logo de cliente no encontrado")
+    return RedirectResponse(url=url, status_code=302)
+
+
+@router.get("/proyectos/{project_id}/cliente/logo/status", response_model=FileStatus)
+async def estado_logo_cliente_proyecto(project_id: int) -> FileStatus:
+    """Estado del logo del cliente del proyecto."""
+    if not await ProjectsService.project_exists(project_id):
+        raise HTTPException(status_code=404, detail=f"Proyecto {project_id} no encontrado")
+    status = await FilesService.get_project_cliente_logo_status(project_id)
+    return FileStatus(**status)
+
+
+@router.post("/proyectos/{project_id}/cliente/logo")
+async def subir_logo_cliente_proyecto(
+    project_id: int,
+    user: AuthRequiredDep,
+    file: UploadFile = File(...),
+) -> dict[str, Any]:
+    """Subir/reemplazar logo del cliente del proyecto. Requiere autenticación."""
+    if not await ProjectsService.project_exists(project_id):
+        raise HTTPException(status_code=404, detail=f"Proyecto {project_id} no encontrado")
+    ct = _check_content_type(file.content_type)
+    content = await file.read()
+    result = await FilesService.upload_project_cliente_logo(project_id, content, ct, file.filename)
+    if not result:
+        raise HTTPException(status_code=503, detail="Almacenamiento no disponible")
+    return {"storage_key": result["storage_key"], "url": result.get("url")}
+
+
 # --- Empresa Logo ---
 
 

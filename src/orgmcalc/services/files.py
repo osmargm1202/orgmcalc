@@ -55,6 +55,46 @@ class FilesService:
         return result
 
     @staticmethod
+    async def upload_project_cliente_logo(
+        project_id: int, content: bytes, content_type: str, original_name: str | None
+    ) -> dict[str, Any] | None:
+        """Upload project client logo with single-active semantics."""
+        store = get_object_store()
+        if not store.available:
+            return None
+
+        ext = extension_from_content_type(content_type)
+        key = StorageKeys.project_cliente_logo(project_id, ext)
+
+        url = store.upload_bytes(key, content, content_type)
+        if not url:
+            return None
+
+        result = await FilesRepository.create_or_replace(
+            owner_type="project",
+            owner_id=project_id,
+            asset_type="cliente_logo",
+            filename=f"cliente_logo.{ext}",
+            storage_key=key,
+            storage_bucket=store._bucket,
+            original_name=original_name,
+            content_type=content_type,
+            size_bytes=len(content),
+        )
+        result["url"] = url
+        return result
+
+    @staticmethod
+    async def get_project_cliente_logo_url(project_id: int) -> str | None:
+        """Get presigned URL for the active project client logo."""
+        return await FilesService.get_download_url("project", project_id, "cliente_logo")
+
+    @staticmethod
+    async def get_project_cliente_logo_status(project_id: int) -> dict[str, Any]:
+        """Get status for the active project client logo."""
+        return await FilesService.get_file_status("project", project_id, "cliente_logo")
+
+    @staticmethod
     async def upload_empresa_logo(
         empresa_id: int, content: bytes, content_type: str, original_name: str | None
     ) -> dict[str, Any] | None:

@@ -18,11 +18,11 @@ class IngenierosRepository:
         async with get_async_connection() as conn:
             async with conn.cursor() as cur:
                 if empresa_id:
-                    # Join with calculo_ingenieros -> calculos -> projects to filter
                     await cur.execute(
                         """
-                        SELECT DISTINCT i.id, i.nombre, i.email, i.telefono, i.profesion,
-                               i.created_at::text, i.updated_at::text
+                        SELECT DISTINCT i.id, i.nombre, i.email, i.telefono, i.codia,
+                               i.id_empresas, i.foto_perfil_url, i.foto_carnet_url,
+                               i.foto_certificacion_url, i.created_at::text, i.updated_at::text
                         FROM ingenieros i
                         LEFT JOIN calculo_ingenieros ci ON i.id = ci.ingeniero_id
                         LEFT JOIN calculos c ON ci.calculo_id = c.id
@@ -36,7 +36,8 @@ class IngenierosRepository:
                 else:
                     await cur.execute(
                         """
-                        SELECT id, nombre, email, telefono, profesion,
+                        SELECT id, nombre, email, telefono, codia, id_empresas,
+                               foto_perfil_url, foto_carnet_url, foto_certificacion_url,
                                created_at::text, updated_at::text
                         FROM ingenieros
                         ORDER BY nombre
@@ -64,7 +65,8 @@ class IngenierosRepository:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
-                    SELECT id, nombre, email, telefono, profesion,
+                    SELECT id, nombre, email, telefono, codia, id_empresas,
+                           foto_perfil_url, foto_carnet_url, foto_certificacion_url,
                            created_at::text, updated_at::text
                     FROM ingenieros WHERE id = %s
                     """,
@@ -83,9 +85,10 @@ class IngenierosRepository:
             async with conn.cursor() as cur:
                 await cur.execute(
                     """
-                    INSERT INTO ingenieros (nombre, email, telefono, profesion)
-                    VALUES (%(nombre)s, %(email)s, %(telefono)s, %(profesion)s)
-                    RETURNING id, nombre, email, telefono, profesion,
+                    INSERT INTO ingenieros (nombre, email, telefono, codia, id_empresas)
+                    VALUES (%(nombre)s, %(email)s, %(telefono)s, %(codia)s, %(id_empresas)s)
+                    RETURNING id, nombre, email, telefono, codia, id_empresas,
+                              foto_perfil_url, foto_carnet_url, foto_certificacion_url,
                               created_at::text, updated_at::text
                     """,
                     data,
@@ -99,8 +102,18 @@ class IngenierosRepository:
         """Update engineer fields."""
         fields = []
         params = {"id": ingeniero_id}
+        allowed_fields = {
+            "nombre",
+            "email",
+            "telefono",
+            "codia",
+            "id_empresas",
+            "foto_perfil_url",
+            "foto_carnet_url",
+            "foto_certificacion_url",
+        }
         for key, value in data.items():
-            if value is not None:
+            if key in allowed_fields and value is not None:
                 fields.append(f"{key} = %({key})s")
                 params[key] = value
         if not fields:
@@ -115,7 +128,8 @@ class IngenierosRepository:
                     UPDATE ingenieros
                     SET {", ".join(fields)}
                     WHERE id = %(id)s
-                    RETURNING id, nombre, email, telefono, profesion,
+                    RETURNING id, nombre, email, telefono, codia, id_empresas,
+                              foto_perfil_url, foto_carnet_url, foto_certificacion_url,
                               created_at::text, updated_at::text
                     """,
                     params,

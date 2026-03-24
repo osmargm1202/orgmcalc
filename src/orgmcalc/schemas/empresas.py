@@ -110,26 +110,3 @@ class EmpresaResponse(BaseModel):
     logo_available: bool = Field(
         default=False, description="Indica si la empresa tiene logo disponible"
     )
-
-
-class EmpresaListItem(BaseModel):
-    """Item in list of companies.
-
-    Lightweight representation for list views.
-    """
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "id": "emp-uuid",
-                "nombre": "Constructora ABC S.A.",
-                "ciudad": "Ciudad de Guatemala",
-                "logo_available": False,
-            }
-        }
-    )
-
-    id: str = Field(..., description="Identificador único")
-    nombre: str = Field(..., description="Nombre de la empresa")
-    ciudad: str | None = Field(None, description="Ciudad")
-    logo_available: bool = Field(default=False, description="Indica si tiene logo disponible")
