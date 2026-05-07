@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from orgmcalc.repositories.clientes import ClientesRepository
 from orgmcalc.repositories.files import FilesRepository
 from orgmcalc.repositories.projects import ProjectsRepository
 
@@ -49,11 +50,17 @@ class ProjectsService:
     @staticmethod
     async def create_project(data: dict[str, Any]) -> dict[str, Any]:
         """Create project."""
+        cliente_id = data.get("cliente_id")
+        if cliente_id and not await ClientesRepository.exists(cliente_id):
+            raise ValueError(f"Cliente con ID '{cliente_id}' no existe")
         return await ProjectsRepository.create(data)
 
     @staticmethod
     async def update_project(project_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
         """Update project."""
+        cliente_id = data.get("cliente_id")
+        if cliente_id and not await ClientesRepository.exists(cliente_id):
+            raise ValueError(f"Cliente con ID '{cliente_id}' no existe")
         return await ProjectsRepository.update(project_id, data)
 
     @staticmethod

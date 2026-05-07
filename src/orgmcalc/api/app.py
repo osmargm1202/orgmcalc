@@ -10,8 +10,8 @@ from orgmcalc.db.connection import close_pool, init_pool
 from orgmcalc.db.migrate import run_migrations
 
 from .routes import (
-    auth,
     calculos,
+    clientes,
     docs,
     documentos,
     empresas,
@@ -53,8 +53,8 @@ def create_app() -> FastAPI:
     # Routes
     app.include_router(health.router, prefix="/health", tags=["health"])
     app.include_router(docs.router)
-    app.include_router(auth.router)
     app.include_router(proyectos.router)
+    app.include_router(clientes.router)
     app.include_router(empresas.router)
     app.include_router(ingenieros.router)
     app.include_router(documentos.router)

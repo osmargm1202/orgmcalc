@@ -6,6 +6,8 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .clientes import ClienteResponse
+
 
 class ProjectCreate(BaseModel):
     """Request body for POST /proyectos.
@@ -19,6 +21,7 @@ class ProjectCreate(BaseModel):
         json_schema_extra={
             "example": {
                 "nombre": "Edificio Centro Comercial",
+                "cliente_id": "cli-uuid",
                 "ubicacion": "Ciudad de Guatemala, Zona 10",
                 "fecha": "2024-03-15",
                 "estado": "activo",
@@ -29,10 +32,9 @@ class ProjectCreate(BaseModel):
     nombre: str = Field(
         ..., min_length=1, max_length=255, description="Nombre del proyecto (requerido)"
     )
-    cliente: str | None = Field(
+    cliente_id: str | None = Field(
         default=None,
-        max_length=255,
-        description="Nombre del cliente asociado al proyecto",
+        description="ID del cliente asociado al proyecto",
     )
     ubicacion: str | None = Field(
         default=None, max_length=500, description="Ubicación física del proyecto"
@@ -52,17 +54,19 @@ class ProjectUpdate(BaseModel):
     """
 
     model_config = ConfigDict(
-        json_schema_extra={"example": {"estado": "completado", "ubicacion": "Antigua Guatemala"}}
+        json_schema_extra={
+            "example": {
+                "estado": "completado",
+                "ubicacion": "Antigua Guatemala",
+                "cliente_id": "cli-uuid",
+            }
+        }
     )
 
     nombre: str | None = Field(
         default=None, min_length=1, max_length=255, description="Nombre del proyecto"
     )
-    cliente: str | None = Field(
-        default=None,
-        max_length=255,
-        description="Nombre del cliente asociado al proyecto",
-    )
+    cliente_id: str | None = Field(default=None, description="ID del cliente asociado al proyecto")
     ubicacion: str | None = Field(
         default=None, max_length=500, description="Ubicación física del proyecto"
     )
@@ -82,6 +86,17 @@ class ProjectResponse(BaseModel):
             "example": {
                 "id": "proj-uuid",
                 "nombre": "Edificio Centro Comercial",
+                "cliente_id": "cli-uuid",
+                "cliente": {
+                    "id": "cli-uuid",
+                    "empresa_id": "emp-uuid",
+                    "empresa": {"id": "emp-uuid", "nombre": "Constructora ABC"},
+                    "nombre": "Obra Punta Cana",
+                    "ubicacion": "Punta Cana",
+                    "telefono": "+1 829-555-0000",
+                    "created_at": "2026-03-29T10:00:00",
+                    "updated_at": "2026-03-29T10:00:00",
+                },
                 "ubicacion": "Ciudad de Guatemala, Zona 10",
                 "fecha": "2024-03-15",
                 "estado": "activo",
@@ -94,7 +109,11 @@ class ProjectResponse(BaseModel):
 
     id: str = Field(..., description="Identificador único del proyecto")
     nombre: str = Field(..., description="Nombre del proyecto")
-    cliente: str | None = Field(default=None, description="Nombre del cliente asociado al proyecto")
+    cliente_id: str | None = Field(default=None, description="ID del cliente asociado al proyecto")
+    cliente: ClienteResponse | None = Field(
+        default=None,
+        description="Cliente asociado al proyecto (objeto estructurado)",
+    )
     ubicacion: str | None = Field(default=None, description="Ubicación física")
     fecha: date | None = Field(default=None, description="Fecha del proyecto")
     estado: str = Field(..., description="Estado actual del proyecto")

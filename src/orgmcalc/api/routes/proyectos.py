@@ -53,7 +53,7 @@ async def obtener_proyecto(project_id: str) -> ProjectResponse:
 )
 async def crear_proyecto(
     req: ProjectCreate,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
 ) -> ProjectResponse:
     """Crear nuevo proyecto.
 
@@ -61,14 +61,17 @@ async def crear_proyecto(
 
     Args:
         req: Datos del proyecto a crear
-        user: Usuario autenticado
+        _claims: Claims autenticados
 
     Returns:
         Proyecto creado
 
     """
     data = req.model_dump()
-    project = await ProjectsService.create_project(data)
+    try:
+        project = await ProjectsService.create_project(data)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     return ProjectResponse(**project)
 
 
@@ -79,7 +82,7 @@ async def crear_proyecto(
 async def actualizar_proyecto(
     project_id: str,
     req: ProjectUpdate,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
 ) -> ProjectResponse:
     """Actualizar proyecto existente.
 
@@ -88,7 +91,7 @@ async def actualizar_proyecto(
     Args:
         project_id: ID del proyecto
         req: Campos a actualizar
-        user: Usuario autenticado
+        _claims: Claims autenticados
 
     Returns:
         Proyecto actualizado
@@ -100,7 +103,10 @@ async def actualizar_proyecto(
     data = {k: v for k, v in req.model_dump().items() if v is not None}
     if not data:
         raise HTTPException(status_code=400, detail="Nada que actualizar")
-    project = await ProjectsService.update_project(project_id, data)
+    try:
+        project = await ProjectsService.update_project(project_id, data)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     if not project:
         raise HTTPException(status_code=404, detail=f"Proyecto {project_id} no encontrado")
     return ProjectResponse(**project)
@@ -112,7 +118,7 @@ async def actualizar_proyecto(
 )
 async def eliminar_proyecto(
     project_id: str,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
 ) -> Response:
     """Eliminar proyecto.
 
@@ -120,7 +126,7 @@ async def eliminar_proyecto(
 
     Args:
         project_id: ID del proyecto
-        user: Usuario autenticado
+        _claims: Claims autenticados
 
     Returns:
         204 No Content

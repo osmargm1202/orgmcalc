@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import Optional
+from uuid import uuid4
 
 from sqlalchemy import DateTime, Index, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -14,7 +15,7 @@ class Ingeniero(Base):
 
     __tablename__ = "ingenieros"
 
-    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid4()))
     nombre: Mapped[str] = mapped_column(Text, nullable=False)
     email: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # noqa: UP045
     telefono: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # noqa: UP045

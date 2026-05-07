@@ -78,6 +78,20 @@ class ObjectStore:
         except ClientError:
             return None
 
+    def delete_object(self, key: str) -> bool:
+        """Delete object by key.
+
+        Returns True when deletion request succeeds. For S3-compatible APIs,
+        deleting a missing object is typically idempotent and still succeeds.
+        """
+        if not self._client:
+            return False
+        try:
+            self._client.delete_object(Bucket=self._bucket, Key=key)
+            return True
+        except ClientError:
+            return False
+
 
 _store: ObjectStore | None = None
 

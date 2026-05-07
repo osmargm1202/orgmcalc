@@ -1,7 +1,7 @@
 """Models package."""
 
-from .auth import AuthSession, AuthUser
 from .calculo import Calculo
+from .cliente import Cliente
 from .documento import Documento
 from .empresa import Empresa
 from .file_asset import FileAsset
@@ -10,9 +10,8 @@ from .project import Project
 from .tipo_calculo import TipoCalculo
 
 __all__ = [
-    "AuthSession",
-    "AuthUser",
     "Calculo",
+    "Cliente",
     "Documento",
     "Empresa",
     "FileAsset",

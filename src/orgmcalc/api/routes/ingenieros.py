@@ -39,7 +39,7 @@ async def obtener_ingeniero(ingeniero_id: str) -> IngenieroResponse:
 @router.post("", status_code=201, response_model=IngenieroResponse)
 async def crear_ingeniero(
     req: IngenieroCreate,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
 ) -> IngenieroResponse:
     """Crear nuevo ingeniero. Requiere autenticación."""
     data = req.model_dump()
@@ -51,7 +51,7 @@ async def crear_ingeniero(
 async def actualizar_ingeniero(
     ingeniero_id: str,
     req: IngenieroUpdate,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
 ) -> IngenieroResponse:
     """Actualizar ingeniero existente. Requiere autenticación."""
     data = {k: v for k, v in req.model_dump().items() if v is not None}
@@ -66,7 +66,7 @@ async def actualizar_ingeniero(
 @router.delete("/{ingeniero_id}", status_code=204)
 async def eliminar_ingeniero(
     ingeniero_id: str,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
 ) -> Response:
     """Eliminar ingeniero. Requiere autenticación."""
     if not await IngenierosService.ingeniero_exists(ingeniero_id):

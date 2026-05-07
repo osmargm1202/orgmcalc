@@ -15,20 +15,26 @@ class StorageKeys:
         return f"projects/{project_id}/cliente/logo.{extension.lstrip('.').lower() or 'png'}"
 
     @staticmethod
-    def empresa_logo(empresa_id: str, extension: str = "png") -> str:
-        return f"empresas/{empresa_id}/logo.{extension.lstrip('.').lower() or 'png'}"
+    def empresa_logo(empresa_label: str, extension: str = "png") -> str:
+        return f"empresas/{empresa_label}/logo.{extension.lstrip('.').lower() or 'png'}"
 
     @staticmethod
-    def ingeniero_perfil(ingeniero_id: str, extension: str = "png") -> str:
-        return f"ingenieros/{ingeniero_id}/perfil.{extension.lstrip('.').lower() or 'png'}"
+    def cliente_logo(cliente_label: str, extension: str = "png") -> str:
+        return f"clientes/{cliente_label}/logo.{extension.lstrip('.').lower() or 'png'}"
 
     @staticmethod
-    def ingeniero_carnet(ingeniero_id: str, extension: str = "pdf") -> str:
-        return f"ingenieros/{ingeniero_id}/carnet.{extension.lstrip('.').lower() or 'pdf'}"
+    def ingeniero_perfil(ingeniero_label: str, extension: str = "png") -> str:
+        return f"ingenieros/{ingeniero_label}/perfil.{extension.lstrip('.').lower() or 'png'}"
 
     @staticmethod
-    def ingeniero_certificacion(ingeniero_id: str, extension: str = "pdf") -> str:
-        return f"ingenieros/{ingeniero_id}/certificacion.{extension.lstrip('.').lower() or 'pdf'}"
+    def ingeniero_carnet(ingeniero_label: str, extension: str = "pdf") -> str:
+        return f"ingenieros/{ingeniero_label}/carnet.{extension.lstrip('.').lower() or 'pdf'}"
+
+    @staticmethod
+    def ingeniero_certificacion(ingeniero_label: str, extension: str = "pdf") -> str:
+        return (
+            f"ingenieros/{ingeniero_label}/certificacion.{extension.lstrip('.').lower() or 'pdf'}"
+        )
 
     @staticmethod
     def project_document(project_id: str, document_id: str, filename: str) -> str:

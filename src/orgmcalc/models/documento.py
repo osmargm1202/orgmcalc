@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import Optional
+from uuid import uuid4
 
 from sqlalchemy import DateTime, ForeignKey, Index, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -14,7 +15,7 @@ class Documento(Base):
 
     __tablename__ = "documentos"
 
-    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid4()))
     project_id: Mapped[str] = mapped_column(
         Text,
         ForeignKey("projects.id", ondelete="CASCADE"),

@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import Optional
+from uuid import uuid4
 
 from sqlalchemy import DateTime, Index, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -14,7 +15,7 @@ class Empresa(Base):
 
     __tablename__ = "empresas"
 
-    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid4()))
     nombre: Mapped[str] = mapped_column(Text, nullable=False)
     logo_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # noqa: UP045
     url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # noqa: UP045
@@ -36,6 +37,9 @@ class Empresa(Base):
 
     calculos: Mapped[list["Calculo"]] = relationship(  # noqa: F821  # type: ignore[name-defined]
         "Calculo", back_populates="empresa", lazy="selectin"
+    )
+    clientes: Mapped[list["Cliente"]] = relationship(  # noqa: F821  # type: ignore[name-defined]
+        "Cliente", back_populates="empresa", lazy="selectin"
     )
 
     __table_args__ = (Index("idx_empresas_nombre", "nombre"),)

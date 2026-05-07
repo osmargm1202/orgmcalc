@@ -33,7 +33,7 @@ async def obtener_empresa(empresa_id: str) -> EmpresaResponse:
 @router.post("", status_code=201, response_model=EmpresaResponse)
 async def crear_empresa(
     req: EmpresaCreate,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
 ) -> EmpresaResponse:
     """Crear nueva empresa. Requiere autenticación."""
     data = req.model_dump()
@@ -45,7 +45,7 @@ async def crear_empresa(
 async def actualizar_empresa(
     empresa_id: str,
     req: EmpresaUpdate,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
 ) -> EmpresaResponse:
     """Actualizar empresa existente. Requiere autenticación."""
     data = {k: v for k, v in req.model_dump().items() if v is not None}
@@ -60,7 +60,7 @@ async def actualizar_empresa(
 @router.delete("/{empresa_id}", status_code=204)
 async def eliminar_empresa(
     empresa_id: str,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
 ) -> Response:
     """Eliminar empresa. Requiere autenticación."""
     if not await EmpresasService.empresa_exists(empresa_id):

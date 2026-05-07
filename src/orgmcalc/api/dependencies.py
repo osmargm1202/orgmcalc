@@ -1,7 +1,7 @@
-"""FastAPI dependencies including authentication."""
+"""FastAPI dependencies including JWKS-backed authentication."""
 
 from collections.abc import AsyncGenerator
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -9,7 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from orgmcalc.config import Settings, get_settings
 from orgmcalc.db.connection import get_async_connection
-from orgmcalc.services.auth import AuthService
+from orgmcalc.services.jwks_verifier import (
+    AuthTokenError,
+    JwksVerifier,
+    VerifiedAccessClaims,
+)
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -30,11 +34,20 @@ SettingsDep = Annotated[Settings, Depends(get_settings_dep)]
 
 # Authentication scheme
 security = HTTPBearer(auto_error=False)
+_jwks_verifier: JwksVerifier | None = None
+
+
+def get_jwks_verifier() -> JwksVerifier:
+    """Return the process-local JWKS verifier singleton."""
+    global _jwks_verifier
+    if _jwks_verifier is None:
+        _jwks_verifier = JwksVerifier(get_settings())
+    return _jwks_verifier
 
 
 async def require_auth(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
-) -> dict[str, Any]:
+) -> VerifiedAccessClaims:
     """Dependency to require authentication.
 
     Use this for POST, PATCH, DELETE endpoints that require authentication.
@@ -43,7 +56,7 @@ async def require_auth(
         credentials: Bearer token from Authorization header
 
     Returns:
-        User dictionary with user info
+        Verified access-token claims
 
     Raises:
         HTTPException: 401 if no valid token provided
@@ -51,44 +64,19 @@ async def require_auth(
     if not credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
+            detail="Missing bearer token",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = credentials.credentials
-    user = await AuthService.get_current_user(token)
-
-    if not user:
+    try:
+        return await get_jwks_verifier().verify_access_token(credentials.credentials)
+    except AuthTokenError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
+            detail="Invalid token",
             headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    return user
-
-
-async def optional_auth(
-    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
-) -> dict[str, Any] | None:
-    """Dependency for optional authentication.
-
-    Use this for GET endpoints where auth is optional (for future use).
-    Returns None if no valid token, user dict if valid token.
-
-    Args:
-        credentials: Bearer token from Authorization header
-
-    Returns:
-        User dictionary or None
-    """
-    if not credentials:
-        return None
-
-    token = credentials.credentials
-    return await AuthService.get_current_user(token)
+        ) from exc
 
 
 # Type annotations for auth dependencies
-AuthRequiredDep = Annotated[dict[str, Any], Depends(require_auth)]
-AuthOptionalDep = Annotated[dict[str, Any] | None, Depends(optional_auth)]
+AuthRequiredDep = Annotated[VerifiedAccessClaims, Depends(require_auth)]

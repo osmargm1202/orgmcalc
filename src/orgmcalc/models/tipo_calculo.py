@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import Optional
+from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, Index, Integer, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -14,7 +15,7 @@ class TipoCalculo(Base):
 
     __tablename__ = "tipo_calculos"
 
-    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    id: Mapped[str] = mapped_column(Text, primary_key=True, default=lambda: str(uuid4()))
     codigo: Mapped[str] = mapped_column(Text, unique=True, nullable=False)
     nombre: Mapped[str] = mapped_column(Text, nullable=False)
     descripcion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # noqa: UP045

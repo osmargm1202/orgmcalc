@@ -33,25 +33,21 @@ curl -X POST http://localhost:8000/proyectos \
 - **POST, PATCH, DELETE endpoints** (write operations): **Require authentication**
 - **File uploads** (POST /storage/*): **Require authentication**
 
-### Google OAuth Flow
+### Bearer Access Tokens
 
-1. **Initiate OAuth**: Visit `/auth/google` in your browser
-2. **Google Consent**: User authenticates with Google
-3. **Callback**: Google redirects to `/auth/google/callback?code=...`
-4. **Session Created**: API returns a bearer token
-5. **Use Token**: Include token in all write requests:
+`orgmcalc` is a downstream token consumer only.
+It does **not** expose login, logout, refresh, callback, or local `/auth/*` endpoints.
+Clients must obtain an OrgAuth-issued bearer **access** token externally and include it in write requests:
    ```
    Authorization: Bearer <token>
    ```
 
-### Auth Endpoints
+Protected-write auth contract:
 
-| Method | Endpoint | Auth Required | Description |
-|--------|----------|---------------|-------------|
-| GET | `/auth/google` | No | Start OAuth flow (redirects to Google) |
-| GET | `/auth/google/callback` | No | OAuth callback (exchanges code for session) |
-| POST | `/auth/logout` | Yes | Revoke current session |
-| GET | `/auth/me` | Yes | Get current user info |
+- missing bearer token → `401 Missing bearer token`
+- malformed, expired, wrong-type, bad-signature, or unknown-`kid` token → `401 Invalid token`
+
+Public GET endpoints remain public even when the `Authorization` header is absent or invalid.
 
 ## Projects (`/proyectos`)
 
@@ -260,7 +256,7 @@ Engineers have three file types:
 
 ## Calculations (`/proyectos/{id}/calculos`)
 
-Calculations belong to projects. Each calculation can be linked to multiple companies and engineers.
+Calculations belong to projects. Each calculation is associated directly with one company and one engineer.
 
 ### Endpoints
 
@@ -290,35 +286,7 @@ curl -X POST http://localhost:8000/proyectos/1/calculos \
   }'
 ```
 
-### Calculation-Company Links
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/proyectos/{id}/calculos/{cid}/empresas` | No | List linked companies |
-| POST | `/proyectos/{id}/calculos/{cid}/empresas` | Yes | Link company |
-| PATCH | `/proyectos/{id}/calculos/{cid}/empresas/{link_id}` | Yes | Update link |
-| DELETE | `/proyectos/{id}/calculos/{cid}/empresas/{link_id}` | Yes | Unlink company |
-
-```bash
-# Link company to calculation (Requires Auth)
-curl -X POST http://localhost:8000/proyectos/1/calculos/5/empresas \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{
-    "empresa_id": 2,
-    "rol": "Constructora Principal",
-    "orden": 1
-  }'
-```
-
-### Calculation-Engineer Links
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/proyectos/{id}/calculos/{cid}/ingenieros` | No | List linked engineers |
-| POST | `/proyectos/{id}/calculos/{cid}/ingenieros` | Yes | Link engineer |
-| PATCH | `/proyectos/{id}/calculos/{cid}/ingenieros/{link_id}` | Yes | Update link |
-| DELETE | `/proyectos/{id}/calculos/{cid}/ingenieros/{link_id}` | Yes | Unlink engineer |
+Legacy auth endpoints such as `/auth/google`, `/auth/google/callback`, `/auth/logout`, and `/auth/me` do not exist.
 
 ## Documents (`/proyectos/{id}/documentos`)
 
@@ -426,7 +394,7 @@ Common HTTP status codes:
 | Code | Meaning | When |
 |------|---------|------|
 | 400 | Bad Request | Invalid request body, missing required fields |
-| 401 | Unauthorized | Missing or invalid authentication token |
+| 401 | Unauthorized | Missing bearer token or invalid bearer access token |
 | 403 | Forbidden | Valid token but insufficient permissions |
 | 404 | Not Found | Resource doesn't exist |
 | 422 | Unprocessable Entity | Validation error (invalid file type, etc.) |
@@ -451,7 +419,7 @@ Common HTTP status codes:
 **Unauthorized (401)**:
 ```json
 {
-  "detail": "Not authenticated"
+  "detail": "Missing bearer token"
 }
 ```
 

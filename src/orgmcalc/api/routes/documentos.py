@@ -42,7 +42,7 @@ async def obtener_documento_proyecto(project_id: str, document_id: str) -> Docum
 async def crear_documento_proyecto(
     project_id: str,
     req: DocumentoCreate,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
 ) -> DocumentoResponse:
     """Crear documento en un proyecto. Requiere autenticación."""
     if not await ProjectsService.project_exists(project_id):
@@ -57,7 +57,7 @@ async def crear_documento_proyecto(
 async def eliminar_documento_proyecto(
     project_id: str,
     document_id: str,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
 ) -> Response:
     """Eliminar documento de un proyecto. Requiere autenticación."""
     if not await ProjectsService.project_exists(project_id):

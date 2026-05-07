@@ -1,6 +1,6 @@
 # orgmcalc
 
-Shared calculations API for orgm projects. FastAPI service providing projects, companies, engineers, calculations, and file management with PostgreSQL and R2 object storage.
+Shared calculations API for orgm projects. FastAPI service providing projects, companies, engineers, calculations, and file management with PostgreSQL, R2 object storage, and JWKS-backed bearer-token validation for protected writes.
 
 ## Quick Start
 
@@ -38,19 +38,7 @@ Copy `.env.example` to `.env` and configure all required variables:
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:password@localhost:5432/orgmcalc` |
-| `BASE_URL` | Public URL for OAuth callbacks | `http://localhost:8000` |
-
-### Google OAuth (Required for write operations)
-
-| Variable | Description |
-|----------|-------------|
-| `GOOGLE_CLIENT_ID` | Google OAuth 2.0 client ID |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth 2.0 client secret |
-
-Set up OAuth in [Google Cloud Console](https://console.cloud.google.com/apis/credentials):
-1. Create OAuth 2.0 credentials
-2. Add authorized redirect URI: `{BASE_URL}/auth/google/callback`
-3. Enable Google+ API
+| `AUTH_API_URL` | OrgAuth base URL used to fetch `/.well-known/jwks.json` | `https://auth.or-gm.com` |
 
 ### Object Storage (R2/S3 - Required for file uploads)
 
@@ -69,16 +57,17 @@ The API uses a **protected-write boundary** approach:
 - **POST, PATCH, DELETE endpoints** (write operations): **Require authentication**
 - **File uploads** (POST /storage/*): **Require authentication**
 
-### OAuth Flow
+### Bearer token contract
 
-1. Visit `/auth/google` in browser to start OAuth
-2. Authenticate with Google
-3. Google redirects to `/auth/google/callback?code=...`
-4. API returns bearer token in JSON response
-5. Include token in all write requests:
-   ```
-   Authorization: Bearer <token>
-   ```
+orgmcalc does not log users in, issue tokens, refresh tokens, or manage sessions.
+Clients must obtain OrgAuth bearer access tokens elsewhere, then include them in write requests:
+    ```
+    Authorization: Bearer <token>
+    ```
+
+Protected-route auth failures are intentionally simple:
+- Missing bearer token → `401 Missing bearer token`
+- Invalid / expired / wrong-type / bad-signature token → `401 Invalid token`
 
 ## Development
 
@@ -137,8 +126,7 @@ docker run -d \
   --name orgmcalc \
   -p 8000:8000 \
   -e DATABASE_URL=postgresql://... \
-  -e GOOGLE_CLIENT_ID=... \
-  -e GOOGLE_CLIENT_SECRET=... \
+  -e AUTH_API_URL=https://auth.or-gm.com \
   -e R2_ENDPOINT_URL=... \
   orgmcalc:latest
 ```
@@ -157,9 +145,7 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql://orgmcalc:password@db:5432/orgmcalc
-      - BASE_URL=http://localhost:8000
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - AUTH_API_URL=${AUTH_API_URL:-https://auth.or-gm.com}
       - R2_ENDPOINT_URL=${R2_ENDPOINT_URL}
       - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
       - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
@@ -202,7 +188,7 @@ fly launch
 
 # Set secrets
 fly secrets set DATABASE_URL=...
-fly secrets set GOOGLE_CLIENT_ID=...
+fly secrets set AUTH_API_URL=https://auth.or-gm.com
 # ... etc
 
 # Deploy
@@ -253,7 +239,7 @@ After deployment, verify everything works:
 
 ```bash
 # Set target URL
-export BASE_URL=https://your-api.example.com
+export API_BASE_URL=https://your-api.example.com
 
 # Run smoke tests
 ./scripts/smoke_test.sh
@@ -279,7 +265,7 @@ Routes follow Spanish naming for compatibility (`/proyectos`, `/empresas`, `/ing
 | Calculos | GET /proyectos/{id}/calculos | GET /proyectos/{id}/calculos/{cid} | POST /proyectos/{id}/calculos | PATCH ... | DELETE ... |
 | Documentos | GET /proyectos/{id}/documentos | - | POST ... | - | DELETE ... |
 
-All POST/PATCH/DELETE endpoints require authentication via Bearer token.
+All POST/PATCH/DELETE endpoints require an OrgAuth-issued bearer access token validated locally via JWKS.
 
 ## Project Structure
 

@@ -5,14 +5,15 @@ from __future__ import annotations
 from typing import Any
 
 from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
 
 from orgmcalc.db.session import get_session
-from orgmcalc.models import Project
+from orgmcalc.models import Cliente, Project
 
 
 def _project_to_dict(project: Project) -> dict[str, Any]:
     """Convert Project model to dict with formatted timestamps."""
-    return {
+    data = {
         c.name: (
             getattr(project, c.name).isoformat()
             if hasattr(getattr(project, c.name), "isoformat")
@@ -20,6 +21,26 @@ def _project_to_dict(project: Project) -> dict[str, Any]:
         )
         for c in project.__table__.columns
     }
+    data["cliente"] = None
+    if project.cliente:
+        data["cliente"] = {
+            "id": project.cliente.id,
+            "empresa_id": project.cliente.empresa_id,
+            "empresa": (
+                {
+                    "id": project.cliente.empresa.id,
+                    "nombre": project.cliente.empresa.nombre,
+                }
+                if project.cliente.empresa
+                else None
+            ),
+            "nombre": project.cliente.nombre,
+            "ubicacion": project.cliente.ubicacion,
+            "telefono": project.cliente.telefono,
+            "created_at": project.cliente.created_at.isoformat(),
+            "updated_at": project.cliente.updated_at.isoformat(),
+        }
+    return data
 
 
 class ProjectsRepository:
@@ -30,7 +51,11 @@ class ProjectsRepository:
         """List all projects with pagination."""
         async with get_session() as session:
             result = await session.execute(
-                select(Project).order_by(Project.created_at.desc()).offset(offset).limit(limit)
+                select(Project)
+                .options(selectinload(Project.cliente).selectinload(Cliente.empresa))
+                .order_by(Project.created_at.desc())
+                .offset(offset)
+                .limit(limit)
             )
             projects = result.scalars().all()
             return [_project_to_dict(p) for p in projects]
@@ -46,7 +71,11 @@ class ProjectsRepository:
     async def get_by_id(project_id: str) -> dict[str, Any] | None:
         """Get project by ID."""
         async with get_session() as session:
-            result = await session.execute(select(Project).where(Project.id == project_id))
+            result = await session.execute(
+                select(Project)
+                .options(selectinload(Project.cliente).selectinload(Cliente.empresa))
+                .where(Project.id == project_id)
+            )
             project = result.scalar_one_or_none()
             if project is None:
                 return None
@@ -60,19 +89,29 @@ class ProjectsRepository:
             ubicacion=data.get("ubicacion"),
             fecha=data.get("fecha"),
             estado=data.get("estado", "activo"),
-            cliente=data.get("cliente"),
+            cliente_id=data.get("cliente_id"),
         )
         async with get_session() as session:
             session.add(project)
             await session.flush()
             await session.refresh(project)
-            return _project_to_dict(project)
+            result = await session.execute(
+                select(Project)
+                .options(selectinload(Project.cliente).selectinload(Cliente.empresa))
+                .where(Project.id == project.id)
+            )
+            hydrated = result.scalar_one()
+            return _project_to_dict(hydrated)
 
     @staticmethod
     async def update(project_id: str, data: dict[str, Any]) -> dict[str, Any] | None:
         """Update project fields."""
         async with get_session() as session:
-            result = await session.execute(select(Project).where(Project.id == project_id))
+            result = await session.execute(
+                select(Project)
+                .options(selectinload(Project.cliente).selectinload(Cliente.empresa))
+                .where(Project.id == project_id)
+            )
             project = result.scalar_one_or_none()
             if project is None:
                 return None
@@ -84,7 +123,13 @@ class ProjectsRepository:
             project.updated_at = func.now()
             await session.flush()
             await session.refresh(project)
-            return _project_to_dict(project)
+            result = await session.execute(
+                select(Project)
+                .options(selectinload(Project.cliente).selectinload(Cliente.empresa))
+                .where(Project.id == project.id)
+            )
+            hydrated = result.scalar_one()
+            return _project_to_dict(hydrated)
 
     @staticmethod
     async def delete(project_id: str) -> bool:

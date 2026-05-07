@@ -9,6 +9,7 @@ from fastapi.responses import RedirectResponse
 
 from orgmcalc.api.dependencies import AuthRequiredDep
 from orgmcalc.schemas.files import FileStatus, FileStatusBatchResponse, FileStatusRequest
+from orgmcalc.services.clientes import ClientesService
 from orgmcalc.services.empresas import EmpresasService
 from orgmcalc.services.files import FilesService
 from orgmcalc.services.ingenieros import IngenierosService
@@ -53,7 +54,7 @@ async def estado_logo_proyecto(project_id: str) -> FileStatus:
 @router.post("/proyectos/{project_id}/logo")
 async def subir_logo_proyecto(
     project_id: str,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
     """Subir/reemplazar logo del proyecto. Requiere autenticación."""
@@ -64,7 +65,12 @@ async def subir_logo_proyecto(
     result = await FilesService.upload_project_logo(project_id, content, ct, file.filename)
     if not result:
         raise HTTPException(status_code=503, detail="Almacenamiento no disponible")
-    return {"storage_key": result["storage_key"], "url": result.get("url")}
+    return {
+        "storage_key": result["storage_key"],
+        "url": result.get("url"),
+        "filename": result.get("filename"),
+        "content_type": result.get("content_type"),
+    }
 
 
 # --- Proyecto Cliente Logo ---
@@ -93,7 +99,7 @@ async def estado_logo_cliente_proyecto(project_id: str) -> FileStatus:
 @router.post("/proyectos/{project_id}/cliente/logo")
 async def subir_logo_cliente_proyecto(
     project_id: str,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
     """Subir/reemplazar logo del cliente del proyecto. Requiere autenticación."""
@@ -104,7 +110,12 @@ async def subir_logo_cliente_proyecto(
     result = await FilesService.upload_project_cliente_logo(project_id, content, ct, file.filename)
     if not result:
         raise HTTPException(status_code=503, detail="Almacenamiento no disponible")
-    return {"storage_key": result["storage_key"], "url": result.get("url")}
+    return {
+        "storage_key": result["storage_key"],
+        "url": result.get("url"),
+        "filename": result.get("filename"),
+        "content_type": result.get("content_type"),
+    }
 
 
 # --- Empresa Logo ---
@@ -133,7 +144,7 @@ async def estado_logo_empresa(empresa_id: str) -> FileStatus:
 @router.post("/empresas/{empresa_id}/logo")
 async def subir_logo_empresa(
     empresa_id: str,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
     """Subir/reemplazar logo de la empresa. Requiere autenticación."""
@@ -144,7 +155,57 @@ async def subir_logo_empresa(
     result = await FilesService.upload_empresa_logo(empresa_id, content, ct, file.filename)
     if not result:
         raise HTTPException(status_code=503, detail="Almacenamiento no disponible")
-    return {"storage_key": result["storage_key"], "url": result.get("url")}
+    return {
+        "storage_key": result["storage_key"],
+        "url": result.get("url"),
+        "filename": result.get("filename"),
+        "content_type": result.get("content_type"),
+    }
+
+
+# --- Cliente Logo ---
+
+
+@router.get("/clientes/{cliente_id}/logo")
+async def descargar_logo_cliente(cliente_id: str) -> RedirectResponse:
+    """Descargar logo del cliente."""
+    if not await ClientesService.cliente_exists(cliente_id):
+        raise HTTPException(status_code=404, detail=f"Cliente {cliente_id} no encontrado")
+    url = await FilesService.get_cliente_logo_url(cliente_id)
+    if not url:
+        raise HTTPException(status_code=404, detail="Logo no encontrado")
+    return RedirectResponse(url=url, status_code=302)
+
+
+@router.get("/clientes/{cliente_id}/logo/status", response_model=FileStatus)
+async def estado_logo_cliente(cliente_id: str) -> FileStatus:
+    """Estado del logo del cliente."""
+    if not await ClientesService.cliente_exists(cliente_id):
+        raise HTTPException(status_code=404, detail=f"Cliente {cliente_id} no encontrado")
+    status = await FilesService.get_cliente_logo_status(cliente_id)
+    return FileStatus(**status)
+
+
+@router.post("/clientes/{cliente_id}/logo")
+async def subir_logo_cliente(
+    cliente_id: str,
+    _claims: AuthRequiredDep,
+    file: UploadFile = File(...),
+) -> dict[str, Any]:
+    """Subir/reemplazar logo del cliente. Requiere autenticación."""
+    if not await ClientesService.cliente_exists(cliente_id):
+        raise HTTPException(status_code=404, detail=f"Cliente {cliente_id} no encontrado")
+    ct = _check_content_type(file.content_type)
+    content = await file.read()
+    result = await FilesService.upload_cliente_logo(cliente_id, content, ct, file.filename)
+    if not result:
+        raise HTTPException(status_code=503, detail="Almacenamiento no disponible")
+    return {
+        "storage_key": result["storage_key"],
+        "url": result.get("url"),
+        "filename": result.get("filename"),
+        "content_type": result.get("content_type"),
+    }
 
 
 # --- Ingeniero Perfil ---
@@ -173,7 +234,7 @@ async def estado_perfil_ingeniero(ingeniero_id: str) -> FileStatus:
 @router.post("/ingenieros/{ingeniero_id}/perfil")
 async def subir_perfil_ingeniero(
     ingeniero_id: str,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
     """Subir/reemplazar foto de perfil del ingeniero. Requiere autenticación."""
@@ -184,7 +245,12 @@ async def subir_perfil_ingeniero(
     result = await FilesService.upload_ingeniero_perfil(ingeniero_id, content, ct, file.filename)
     if not result:
         raise HTTPException(status_code=503, detail="Almacenamiento no disponible")
-    return {"storage_key": result["storage_key"], "url": result.get("url")}
+    return {
+        "storage_key": result["storage_key"],
+        "url": result.get("url"),
+        "filename": result.get("filename"),
+        "content_type": result.get("content_type"),
+    }
 
 
 # --- Ingeniero Carnet ---
@@ -213,7 +279,7 @@ async def estado_carnet_ingeniero(ingeniero_id: str) -> FileStatus:
 @router.post("/ingenieros/{ingeniero_id}/carnet")
 async def subir_carnet_ingeniero(
     ingeniero_id: str,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
     """Subir/reemplazar carnet del ingeniero. Requiere autenticación."""
@@ -224,7 +290,12 @@ async def subir_carnet_ingeniero(
     result = await FilesService.upload_ingeniero_carnet(ingeniero_id, content, ct, file.filename)
     if not result:
         raise HTTPException(status_code=503, detail="Almacenamiento no disponible")
-    return {"storage_key": result["storage_key"], "url": result.get("url")}
+    return {
+        "storage_key": result["storage_key"],
+        "url": result.get("url"),
+        "filename": result.get("filename"),
+        "content_type": result.get("content_type"),
+    }
 
 
 # --- Ingeniero Certificacion ---
@@ -253,7 +324,7 @@ async def estado_certificacion_ingeniero(ingeniero_id: str) -> FileStatus:
 @router.post("/ingenieros/{ingeniero_id}/certificacion")
 async def subir_certificacion_ingeniero(
     ingeniero_id: str,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
     """Subir/reemplazar certificacion del ingeniero. Requiere autenticación."""
@@ -266,7 +337,12 @@ async def subir_certificacion_ingeniero(
     )
     if not result:
         raise HTTPException(status_code=503, detail="Almacenamiento no disponible")
-    return {"storage_key": result["storage_key"], "url": result.get("url")}
+    return {
+        "storage_key": result["storage_key"],
+        "url": result.get("url"),
+        "filename": result.get("filename"),
+        "content_type": result.get("content_type"),
+    }
 
 
 # --- Documento File ---
@@ -287,7 +363,7 @@ async def descargar_documento_file(project_id: str, document_id: str) -> Redirec
 async def subir_documento_file(
     project_id: str,
     document_id: str,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
     file: UploadFile = File(...),
 ) -> dict[str, Any]:
     """Subir/reemplazar archivo de documento. Requiere autenticación."""
@@ -300,7 +376,12 @@ async def subir_documento_file(
     )
     if not result:
         raise HTTPException(status_code=503, detail="Almacenamiento no disponible")
-    return {"storage_key": result["storage_key"], "url": result.get("url")}
+    return {
+        "storage_key": result["storage_key"],
+        "url": result.get("url"),
+        "filename": result.get("filename"),
+        "content_type": result.get("content_type"),
+    }
 
 
 # --- Batch Status ---

@@ -90,7 +90,7 @@ async def obtener_calculo_proyecto(project_id: str, calculo_id: str) -> CalculoR
 async def crear_calculo_proyecto(
     project_id: str,
     req: CalculoCreate,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
 ) -> CalculoResponse:
     """Crear cálculo en un proyecto con empresa e ingeniero asignados.
 
@@ -115,7 +115,7 @@ async def actualizar_calculo_proyecto(
     project_id: str,
     calculo_id: str,
     req: CalculoUpdate,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
 ) -> CalculoResponse:
     """Actualizar cálculo de un proyecto.
 
@@ -141,7 +141,7 @@ async def actualizar_calculo_proyecto(
 async def eliminar_calculo_proyecto(
     project_id: str,
     calculo_id: str,
-    user: AuthRequiredDep,
+    _claims: AuthRequiredDep,
 ) -> Response:
     """Eliminar cálculo de un proyecto. Requiere autenticación."""
     if not await ProjectsService.project_exists(project_id):
